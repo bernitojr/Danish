@@ -1,4 +1,4 @@
-import type { Card, GameState, RulesConfig } from '@/features/game/utils/types';
+import type { Card, GameState, Player, RulesConfig, TurnContext } from '@/features/game/utils/types';
 
 // Ranks whose face value is ≤ 7 — the only ranks legal under the 7 rule.
 // 10 is NOT allowed under the 7 rule (handled explicitly in the 10 branch).
@@ -101,4 +101,189 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
     ? getEffectiveValue(turnContext.lastEffectiveCard, config)
     : 0;
   return getEffectiveValue(card, config) >= effectiveValue;
+}
+
+// ── Cleared context — used after any cut ──────────────────────────────────────
+const CLEARED_CONTEXT: TurnContext = {
+  mustPlayDouble: false,
+  mustFollowSuit: null,
+  mustFollowAboveValue: null,
+  mustPlayBelow7: false,
+  lastEffectiveCard: null,
+  consecutiveSameValue: 0,
+  lastPlayedValue: null,
+  skippedPlayers: 0,
+  attackTarget: null,
+};
+
+/**
+ * Applies a validated play and returns the next GameState.
+ *
+ * Responsibilities (in order):
+ *   1. Remove played cards from the current player's zones (hand → visible → hidden)
+ *   2. Add cards to pile
+ *   3. Detect auto-cut (4-of-a-kind) or 10 cut — move pile to discard
+ *   4. Compute new TurnContext based on the card played
+ *   5. Replenish hand from deck (up to 3 cards)
+ *   6. Detect if current player has finished
+ *   7. Advance currentPlayerIndex (same for cuts, attacked player for Ace,
+ *      skip N for 8s, +1 otherwise)
+ *
+ * Pure function — never mutates state or arguments.
+ */
+export function applyPlay(
+  cards: Card[],
+  targetId: string | null,
+  state: GameState,
+): GameState {
+  const rank = cards[0].rank;
+  const card = cards[0];
+  const { turnContext, config } = state;
+  const currentPlayer = state.players[state.currentPlayerIndex];
+
+  // ── 1. Remove played cards from player zones ──────────────────────────────
+  const playedIds = new Set(cards.map(c => c.id));
+  const newHand = currentPlayer.hand.filter(c => !playedIds.has(c.id));
+  const newVisible = currentPlayer.visibleCards.filter(c => !playedIds.has(c.id));
+  const newHidden = currentPlayer.hiddenCards.filter(c => !playedIds.has(c.id));
+
+  // ── 2. Add played cards to pile ───────────────────────────────────────────
+  const grownPile = [...state.pile, ...cards];
+
+  // ── 3. Detect 4-of-a-kind and cut ────────────────────────────────────────
+  const effectiveVal = getEffectiveValue(card, config);
+  const newConsecutive =
+    turnContext.lastPlayedValue !== null && effectiveVal === turnContext.lastPlayedValue
+      ? turnContext.consecutiveSameValue + cards.length
+      : cards.length;
+  const isFourOfAKind = newConsecutive >= 4;
+  const isCut = rank === '10' || isFourOfAKind;
+
+  const finalPile = isCut ? [] : grownPile;
+  const finalDiscard = isCut ? [...state.discard, ...grownPile] : state.discard;
+
+  // ── 4. Build new TurnContext ──────────────────────────────────────────────
+  let newContext: TurnContext;
+
+  if (isCut) {
+    newContext = { ...CLEARED_CONTEXT };
+  } else {
+    const base: TurnContext = {
+      mustPlayDouble: false,
+      mustFollowSuit: null,
+      mustFollowAboveValue: null,
+      mustPlayBelow7: false,
+      lastEffectiveCard: card,
+      consecutiveSameValue: newConsecutive,
+      lastPlayedValue: effectiveVal,
+      skippedPlayers: 0,
+      attackTarget: null,
+    };
+
+    switch (rank) {
+      case '2':
+        // Reset effective pile value to 0; pile stays (no cut)
+        newContext = { ...base, lastEffectiveCard: null };
+        break;
+
+      case '3': {
+        // Mirror grandparent card's effect forward
+        const mirrored = turnContext.lastEffectiveCard;
+        newContext = {
+          ...base,
+          lastEffectiveCard: mirrored,
+          // If mirroring a 6, carry the suit constraint forward
+          mustFollowSuit: mirrored?.rank === '6' ? mirrored.suit : null,
+          mustFollowAboveValue:
+            mirrored?.rank === '6' ? getEffectiveValue(mirrored, config) : null,
+        };
+        break;
+      }
+
+      case '6':
+        newContext = {
+          ...base,
+          mustFollowSuit: card.suit,
+          mustFollowAboveValue: effectiveVal,
+        };
+        break;
+
+      case '7':
+        newContext = { ...base, mustPlayBelow7: true };
+        break;
+
+      case '8':
+        // N eights played → N players skipped; advancement is handled below
+        newContext = { ...base, skippedPlayers: cards.length };
+        break;
+
+      case 'J':
+        newContext = { ...base, mustPlayDouble: true };
+        break;
+
+      case 'A':
+        newContext = { ...base, attackTarget: targetId };
+        break;
+
+      default:
+        newContext = base;
+    }
+  }
+
+  // ── 5. Replenish hand from deck (up to 3 cards) ───────────────────────────
+  let repHand = newHand;
+  let repDeck = state.deck;
+  while (repHand.length < 3 && repDeck.length > 0) {
+    repHand = [...repHand, repDeck[0]];
+    repDeck = repDeck.slice(1);
+  }
+
+  // ── 6. Detect finish ──────────────────────────────────────────────────────
+  const playerDone =
+    repHand.length === 0 && newVisible.length === 0 && newHidden.length === 0;
+  const newFinishOrder =
+    playerDone && !state.finishOrder.includes(currentPlayer.id)
+      ? [...state.finishOrder, currentPlayer.id]
+      : state.finishOrder;
+
+  // ── 7. Update player in players array ────────────────────────────────────
+  const updatedPlayer: Player = {
+    ...currentPlayer,
+    hand: repHand,
+    visibleCards: newVisible,
+    hiddenCards: newHidden,
+  };
+  const newPlayers = state.players.map((p, i) =>
+    i === state.currentPlayerIndex ? updatedPlayer : p,
+  );
+
+  // ── 8. Advance to next player ─────────────────────────────────────────────
+  const n = state.players.length;
+  let nextIndex: number;
+
+  if (isCut) {
+    // 10 or 4-of-a-kind: same player plays again on empty pile
+    nextIndex = state.currentPlayerIndex;
+  } else if (rank === 'A' && targetId !== null) {
+    // Ace: jump to the attacked player
+    const found = state.players.findIndex(p => p.id === targetId);
+    nextIndex = found !== -1 ? found : (state.currentPlayerIndex + 1) % n;
+  } else {
+    // 8: skip N players; all others: advance by 1
+    const skip = rank === '8' ? cards.length : 0;
+    nextIndex = (state.currentPlayerIndex + 1 + skip) % n;
+  }
+
+  return {
+    ...state,
+    players: newPlayers,
+    deck: repDeck,
+    pile: finalPile,
+    discard: finalDiscard,
+    turnContext: newContext,
+    currentPlayerIndex: nextIndex,
+    finishOrder: newFinishOrder,
+    validMoves: [],
+    bestMove: null,
+  };
 }

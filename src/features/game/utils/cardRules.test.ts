@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPlay, getEffectiveValue } from '@/features/game/utils/cardRules';
+import { isValidPlay, getEffectiveValue, applyPlay } from '@/features/game/utils/cardRules';
 import { createDeck } from '@/features/game/utils/deck';
-import type { Card, GameState, TurnContext, RulesConfig } from '@/features/game/utils/types';
+import type { Card, GameState, Player, TurnContext, RulesConfig } from '@/features/game/utils/types';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -357,5 +357,352 @@ describe('4-of-a-kind auto-cut', () => {
       lastPlayedValue: seven.value,
     });
     expect(isValidPlay([c('7', 'spades')], state)).toBe(true);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// applyPlay
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── applyPlay helpers ──────────────────────────────────────────────────────
+
+function makePlayer(
+  id: string,
+  hand: Card[],
+  visible: Card[] = [],
+  hidden: Card[] = [],
+): Player {
+  return {
+    id,
+    name: id,
+    isBot: false,
+    isReady: true,
+    hand,
+    visibleCards: visible,
+    hiddenCards: hidden,
+    stats: { gamesPlayed: 0, placements: [0, 0, 0, 0], achievements: [] },
+  };
+}
+
+/**
+ * Builds a GameState suitable for applyPlay tests.
+ * Accepts full player list, current player index, and optional overrides.
+ */
+function makeApplyState(
+  players: Player[],
+  currentPlayerIndex: number,
+  opts: {
+    pile?: Card[];
+    deck?: Card[];
+    discard?: Card[];
+    context?: Partial<TurnContext>;
+    config?: RulesConfig;
+  } = {},
+): GameState {
+  return {
+    phase: 'PLAYING',
+    players,
+    currentPlayerIndex,
+    deck: opts.deck ?? [],
+    pile: opts.pile ?? [],
+    discard: opts.discard ?? [],
+    turnContext: makeContext(opts.context ?? {}),
+    config: opts.config ?? { mode: 'patriarchal' },
+    helperActive: false,
+    validMoves: [],
+    bestMove: null,
+    emotes: [],
+    finishOrder: [],
+  };
+}
+
+// ── Normal play ────────────────────────────────────────────────────────────
+
+describe('applyPlay — normal play', () => {
+  it('pile grows after a normal play', () => {
+    const four = c('4', 'hearts');
+    const five = c('5', 'hearts');
+    const p0 = makePlayer('p0', [five, c('6', 'hearts'), c('7', 'hearts')]);
+    const p1 = makePlayer('p1', [c('8', 'spades'), c('9', 'spades'), c('Q', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [four], context: { lastEffectiveCard: four } });
+    const next = applyPlay([five], null, state);
+    expect(next.pile).toHaveLength(2);
+    expect(next.pile[1].id).toBe(five.id);
+  });
+
+  it('advances to next player after a normal play', () => {
+    const four = c('4', 'hearts');
+    const five = c('5', 'hearts');
+    const p0 = makePlayer('p0', [five, c('6', 'hearts'), c('7', 'hearts')]);
+    const p1 = makePlayer('p1', [c('8', 'spades'), c('9', 'spades'), c('Q', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [four], context: { lastEffectiveCard: four } });
+    const next = applyPlay([five], null, state);
+    expect(next.currentPlayerIndex).toBe(1);
+  });
+
+  it('hand shrinks after playing from hand', () => {
+    const four = c('4', 'hearts');
+    const five = c('5', 'hearts');
+    // 4 cards in hand, no deck — plays one, ends up with 3 (no replenishment possible)
+    const p0 = makePlayer('p0', [five, c('6', 'hearts'), c('7', 'hearts'), c('8', 'hearts')]);
+    const p1 = makePlayer('p1', [c('9', 'spades'), c('Q', 'spades'), c('K', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [four], context: { lastEffectiveCard: four } });
+    const next = applyPlay([five], null, state);
+    expect(next.players[0].hand).toHaveLength(3);
+    expect(next.players[0].hand.some(h => h.id === five.id)).toBe(false);
+  });
+
+  it('hand replenishes from deck after playing', () => {
+    const four = c('4', 'hearts');
+    const five = c('5', 'hearts');
+    // Player has 2 cards; deck has 3; after playing 1 → 1 left, draws 2 → 3 total
+    const p0 = makePlayer('p0', [five, c('6', 'hearts')]);
+    const p1 = makePlayer('p1', [c('9', 'spades'), c('Q', 'spades'), c('K', 'spades')]);
+    const deckCards = [c('7', 'diamonds'), c('8', 'diamonds'), c('9', 'diamonds')];
+    const state = makeApplyState([p0, p1], 0, {
+      pile: [four],
+      deck: deckCards,
+      context: { lastEffectiveCard: four },
+    });
+    const next = applyPlay([five], null, state);
+    expect(next.players[0].hand).toHaveLength(3);
+    expect(next.deck).toHaveLength(1); // drew 2, 1 remains
+  });
+
+  it('hand does not replenish beyond 3 cards', () => {
+    const four = c('4', 'hearts');
+    const five = c('5', 'hearts');
+    // Player has 4 — plays 1, already at 3, deck untouched
+    const p0 = makePlayer('p0', [five, c('6', 'hearts'), c('7', 'hearts'), c('8', 'hearts')]);
+    const p1 = makePlayer('p1', [c('9', 'spades'), c('Q', 'spades'), c('K', 'spades')]);
+    const deckCards = [c('A', 'diamonds'), c('2', 'diamonds'), c('3', 'diamonds')];
+    const state = makeApplyState([p0, p1], 0, {
+      pile: [four],
+      deck: deckCards,
+      context: { lastEffectiveCard: four },
+    });
+    const next = applyPlay([five], null, state);
+    expect(next.players[0].hand).toHaveLength(3);
+    expect(next.deck).toHaveLength(3); // deck untouched
+  });
+
+  it('visible card removed when played (visible zone, not hand)', () => {
+    const six = c('6', 'hearts');
+    const seven = c('7', 'spades'); // from visible
+    // Player has no hand, 1 visible card
+    const p0 = makePlayer('p0', [], [seven]);
+    const p1 = makePlayer('p1', [c('8', 'clubs'), c('9', 'clubs'), c('Q', 'clubs')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [six], context: { lastEffectiveCard: six } });
+    const next = applyPlay([seven], null, state);
+    expect(next.players[0].visibleCards).toHaveLength(0);
+    expect(next.players[0].hand).toHaveLength(0); // no deck to draw from
+  });
+});
+
+// ── Card 10 (cut) ──────────────────────────────────────────────────────────
+
+describe('applyPlay — card 10', () => {
+  it('moves pile to discard', () => {
+    const king = c('K', 'hearts');
+    const ten = c('10', 'hearts');
+    const p0 = makePlayer('p0', [ten, c('2', 'hearts'), c('3', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, {
+      pile: [king],
+      context: { lastEffectiveCard: king },
+    });
+    const next = applyPlay([ten], null, state);
+    expect(next.pile).toHaveLength(0);
+    expect(next.discard).toHaveLength(2); // king + ten
+  });
+
+  it('same player plays again after 10', () => {
+    const king = c('K', 'hearts');
+    const ten = c('10', 'hearts');
+    const p0 = makePlayer('p0', [ten, c('2', 'hearts'), c('3', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, {
+      pile: [king],
+      context: { lastEffectiveCard: king },
+    });
+    const next = applyPlay([ten], null, state);
+    expect(next.currentPlayerIndex).toBe(0);
+  });
+
+  it('clears all context flags after 10', () => {
+    const king = c('K', 'hearts');
+    const ten = c('10', 'hearts');
+    const p0 = makePlayer('p0', [ten, c('2', 'hearts'), c('3', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, {
+      pile: [king],
+      context: { mustPlayBelow7: true, lastEffectiveCard: king },
+    });
+    const next = applyPlay([ten], null, state);
+    expect(next.turnContext.mustPlayBelow7).toBe(false);
+    expect(next.turnContext.lastEffectiveCard).toBeNull();
+  });
+});
+
+// ── Card 2 ─────────────────────────────────────────────────────────────────
+
+describe('applyPlay — card 2', () => {
+  it('clears lastEffectiveCard without cutting the pile', () => {
+    const king = c('K', 'hearts');
+    const two = c('2', 'hearts');
+    const p0 = makePlayer('p0', [two, c('3', 'hearts'), c('4', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [king], context: { lastEffectiveCard: king } });
+    const next = applyPlay([two], null, state);
+    expect(next.pile.length).toBeGreaterThan(0); // pile stays — 2 does NOT cut
+    expect(next.turnContext.lastEffectiveCard).toBeNull();
+  });
+});
+
+// ── Card 7 ─────────────────────────────────────────────────────────────────
+
+describe('applyPlay — card 7', () => {
+  it('sets mustPlayBelow7 for the next player', () => {
+    const six = c('6', 'hearts');
+    const seven = c('7', 'hearts');
+    const p0 = makePlayer('p0', [seven, c('8', 'hearts'), c('9', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('Q', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [six], context: { lastEffectiveCard: six } });
+    const next = applyPlay([seven], null, state);
+    expect(next.turnContext.mustPlayBelow7).toBe(true);
+    expect(next.currentPlayerIndex).toBe(1);
+  });
+});
+
+// ── Card J ─────────────────────────────────────────────────────────────────
+
+describe('applyPlay — card J', () => {
+  it('sets mustPlayDouble for the next player', () => {
+    const nine = c('9', 'hearts');
+    const jack = c('J', 'hearts');
+    const p0 = makePlayer('p0', [jack, c('2', 'hearts'), c('3', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [nine], context: { lastEffectiveCard: nine } });
+    const next = applyPlay([jack], null, state);
+    expect(next.turnContext.mustPlayDouble).toBe(true);
+    expect(next.currentPlayerIndex).toBe(1);
+  });
+});
+
+// ── Card 6 ─────────────────────────────────────────────────────────────────
+
+describe('applyPlay — card 6', () => {
+  it('sets mustFollowSuit and mustFollowAboveValue for the next player', () => {
+    const five = c('5', 'hearts');
+    const six = c('6', 'diamonds');
+    const p0 = makePlayer('p0', [six, c('7', 'hearts'), c('8', 'hearts')]);
+    const p1 = makePlayer('p1', [c('9', 'spades'), c('Q', 'spades'), c('K', 'spades')]);
+    const state = makeApplyState([p0, p1], 0, { pile: [five], context: { lastEffectiveCard: five } });
+    const next = applyPlay([six], null, state);
+    expect(next.turnContext.mustFollowSuit).toBe('diamonds');
+    expect(next.turnContext.mustFollowAboveValue).toBe(six.value); // value 3
+    expect(next.currentPlayerIndex).toBe(1);
+  });
+});
+
+// ── Card 8 ─────────────────────────────────────────────────────────────────
+
+describe('applyPlay — card 8', () => {
+  it('single 8 skips next player', () => {
+    const seven = c('7', 'hearts');
+    const eight = c('8', 'hearts');
+    const p0 = makePlayer('p0', [eight, c('9', 'hearts'), c('Q', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const p2 = makePlayer('p2', [c('4', 'clubs'), c('5', 'clubs'), c('6', 'clubs')]);
+    const state = makeApplyState([p0, p1, p2], 0, { pile: [seven], context: { lastEffectiveCard: seven } });
+    const next = applyPlay([eight], null, state);
+    // skip p1, land on p2
+    expect(next.currentPlayerIndex).toBe(2);
+    expect(next.turnContext.skippedPlayers).toBe(1);
+  });
+
+  it('two 8s skip 2 players', () => {
+    const seven = c('7', 'hearts');
+    const eight1 = c('8', 'hearts');
+    const eight2 = c('8', 'spades');
+    const p0 = makePlayer('p0', [eight1, eight2, c('9', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const p2 = makePlayer('p2', [c('4', 'clubs'), c('5', 'clubs'), c('6', 'clubs')]);
+    const p3 = makePlayer('p3', [c('Q', 'diamonds'), c('K', 'diamonds'), c('A', 'diamonds')]);
+    const state = makeApplyState([p0, p1, p2, p3], 0, {
+      pile: [seven],
+      context: { lastEffectiveCard: seven },
+    });
+    const next = applyPlay([eight1, eight2], null, state);
+    // skip p1 and p2, land on p3
+    expect(next.currentPlayerIndex).toBe(3);
+    expect(next.turnContext.skippedPlayers).toBe(2);
+  });
+});
+
+// ── Card A ─────────────────────────────────────────────────────────────────
+
+describe('applyPlay — card A', () => {
+  it('sets attackTarget in context', () => {
+    const queen = c('Q', 'hearts');
+    const ace = c('A', 'hearts');
+    const p0 = makePlayer('p0', [ace, c('2', 'hearts'), c('3', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const p2 = makePlayer('p2', [c('4', 'clubs'), c('5', 'clubs'), c('6', 'clubs')]);
+    const state = makeApplyState([p0, p1, p2], 0, { pile: [queen], context: { lastEffectiveCard: queen } });
+    const next = applyPlay([ace], 'p2', state);
+    expect(next.turnContext.attackTarget).toBe('p2');
+  });
+
+  it('advances turn to the attacked player', () => {
+    const queen = c('Q', 'hearts');
+    const ace = c('A', 'hearts');
+    const p0 = makePlayer('p0', [ace, c('2', 'hearts'), c('3', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('7', 'spades')]);
+    const p2 = makePlayer('p2', [c('4', 'clubs'), c('5', 'clubs'), c('6', 'clubs')]);
+    const state = makeApplyState([p0, p1, p2], 0, { pile: [queen], context: { lastEffectiveCard: queen } });
+    const next = applyPlay([ace], 'p2', state);
+    expect(next.currentPlayerIndex).toBe(2); // p2 is at index 2
+  });
+});
+
+// ── 4-of-a-kind ────────────────────────────────────────────────────────────
+
+describe('applyPlay — 4-of-a-kind auto-cut', () => {
+  it('triggers auto-cut when 4th consecutive same-value card is played', () => {
+    const seven = c('7', 'spades'); // 4th seven
+    const p0 = makePlayer('p0', [seven, c('9', 'hearts'), c('Q', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('8', 'spades')]);
+    // Pile contains 3 sevens already played
+    const pile = [c('7', 'hearts'), c('7', 'diamonds'), c('7', 'clubs')];
+    const state = makeApplyState([p0, p1], 0, {
+      pile,
+      context: {
+        lastEffectiveCard: c('7', 'clubs'),
+        consecutiveSameValue: 3,
+        lastPlayedValue: c('7').value, // 4
+      },
+    });
+    const next = applyPlay([seven], null, state);
+    expect(next.pile).toHaveLength(0); // auto-cut, pile cleared
+    expect(next.discard.length).toBe(4); // all four sevens moved to discard
+    expect(next.turnContext.consecutiveSameValue).toBe(0); // reset
+  });
+
+  it('same player plays again after auto-cut', () => {
+    const seven = c('7', 'spades');
+    const p0 = makePlayer('p0', [seven, c('9', 'hearts'), c('Q', 'hearts')]);
+    const p1 = makePlayer('p1', [c('5', 'spades'), c('6', 'spades'), c('8', 'spades')]);
+    const pile = [c('7', 'hearts'), c('7', 'diamonds'), c('7', 'clubs')];
+    const state = makeApplyState([p0, p1], 0, {
+      pile,
+      context: {
+        lastEffectiveCard: c('7', 'clubs'),
+        consecutiveSameValue: 3,
+        lastPlayedValue: c('7').value,
+      },
+    });
+    const next = applyPlay([seven], null, state);
+    expect(next.currentPlayerIndex).toBe(0); // same player goes again
   });
 });
