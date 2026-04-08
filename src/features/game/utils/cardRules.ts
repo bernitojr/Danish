@@ -1,4 +1,4 @@
-import type { Card, GameState, Player, RulesConfig, TurnContext } from '@/features/game/utils/types';
+import type { BotDifficulty, Card, GameState, Player, RulesConfig, TurnContext } from '@/features/game/utils/types';
 import { createDeck } from '@/features/game/utils/deck';
 
 // Ranks whose face value is ≤ 7 — the only ranks legal under the 7 rule.
@@ -444,4 +444,55 @@ export function initGame(players: Player[], config: RulesConfig): GameState {
     emotes: [],
     finishOrder: [],
   };
+}
+
+/**
+ * Returns the cards a bot should play on its turn, chosen according to difficulty.
+ *
+ * Easy   — picks a random card from the valid moves.
+ * Medium — uses the getBestMove heuristic (weakest normal, then specials).
+ * Hard   — same as medium for now; future: table-reading extensions.
+ *
+ * The returned array is ready to pass directly to applyPlay:
+ * - Empty array  → no valid moves (caller must handle "take the pile").
+ * - [card]       → single-card play.
+ * - [card, card] → pair (e.g. when mustPlayDouble is active and two of the
+ *                   same rank are available).
+ *
+ * Pure function — never mutates state or player.
+ */
+export function getBotMove(
+  bot: Player,
+  state: GameState,
+  difficulty: BotDifficulty,
+): Card[] {
+  const valid = getValidMoves(bot, state);
+  if (valid.length === 0) return [];
+
+  // Pick a representative card based on difficulty
+  let picked: Card;
+  if (difficulty === 'easy') {
+    picked = valid[Math.floor(Math.random() * valid.length)];
+  } else {
+    // medium / hard: delegate to the shared heuristic
+    const best = getBestMove(bot, state);
+    if (!best) return [];
+    picked = best;
+  }
+
+  // Determine the bot's active zone (mirrors getValidMoves zone logic)
+  const zone =
+    bot.hand.length > 0
+      ? bot.hand
+      : bot.visibleCards.length > 0
+        ? bot.visibleCards
+        : bot.hiddenCards;
+
+  // Under mustPlayDouble, play a pair when the zone has two of the same rank
+  const sameRank = zone.filter(c => c.rank === picked.rank);
+  if (state.turnContext.mustPlayDouble && sameRank.length >= 2) {
+    return sameRank.slice(0, 2);
+  }
+
+  return [picked];
 }
