@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidPlay, getEffectiveValue, applyPlay } from '@/features/game/utils/cardRules';
+import { isValidPlay, getEffectiveValue, applyPlay, getValidMoves, getBestMove, initGame } from '@/features/game/utils/cardRules';
 import { createDeck } from '@/features/game/utils/deck';
 import type { Card, GameState, Player, TurnContext, RulesConfig } from '@/features/game/utils/types';
 
@@ -704,5 +704,252 @@ describe('applyPlay — 4-of-a-kind auto-cut', () => {
     });
     const next = applyPlay([seven], null, state);
     expect(next.currentPlayerIndex).toBe(0); // same player goes again
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// getValidMoves
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('getValidMoves — zone selection', () => {
+  it('uses hand when hand is not empty', () => {
+    // Player has a 5 in hand and a K in visible — pile is empty, K valid on empty, 5 valid
+    const five = c('5', 'hearts');
+    const king = c('K', 'spades');
+    const player = makePlayer('p0', [five], [king]);
+    const state = makeState([]); // empty pile
+    const moves = getValidMoves(player, state);
+    // Only hand zone is searched; 5 is valid on empty pile (not rank '4')
+    expect(moves.some(m => m.rank === '5')).toBe(true);
+    expect(moves.some(m => m.rank === 'K')).toBe(false);
+  });
+
+  it('uses visibleCards when hand is empty', () => {
+    const six = c('6', 'hearts');
+    const seven = c('7', 'spades');
+    // hand empty, visible has a 7
+    const player = makePlayer('p0', [], [seven]);
+    const state = makeState([six], { lastEffectiveCard: six });
+    const moves = getValidMoves(player, state);
+    expect(moves.some(m => m.rank === '7')).toBe(true);
+  });
+
+  it('uses hiddenCards when hand and visible are both empty', () => {
+    const six = c('6', 'hearts');
+    const nine = c('9', 'clubs');
+    const player = makePlayer('p0', [], [], [nine]);
+    const state = makeState([six], { lastEffectiveCard: six });
+    const moves = getValidMoves(player, state);
+    expect(moves.some(m => m.rank === '9')).toBe(true);
+  });
+});
+
+describe('getValidMoves — validity filtering', () => {
+  it('returns only cards that pass isValidPlay', () => {
+    // mustPlayBelow7: only ranks ≤7 valid. Player has A (invalid) and 5 (valid).
+    const five = c('5', 'hearts');
+    const ace = c('A', 'hearts');
+    const pile = [c('4', 'diamonds')];
+    const player = makePlayer('p0', [ace, five]);
+    const state = makeState(pile, { mustPlayBelow7: true, lastEffectiveCard: pile[0] });
+    const moves = getValidMoves(player, state);
+    expect(moves).toHaveLength(1);
+    expect(moves[0].rank).toBe('5');
+  });
+
+  it('returns empty array when no card is playable', () => {
+    // mustPlayBelow7, player only has A and K
+    const player = makePlayer('p0', [c('A', 'hearts'), c('K', 'hearts')]);
+    const pile = [c('5', 'diamonds')];
+    const state = makeState(pile, { mustPlayBelow7: true, lastEffectiveCard: pile[0] });
+    expect(getValidMoves(player, state)).toHaveLength(0);
+  });
+
+  it('deduplicates by rank — two 7s yield one entry', () => {
+    const sevenH = c('7', 'hearts');
+    const sevenS = c('7', 'spades');
+    const pile = [c('6', 'diamonds')];
+    const player = makePlayer('p0', [sevenH, sevenS]);
+    const state = makeState(pile, { lastEffectiveCard: pile[0] });
+    const moves = getValidMoves(player, state);
+    // Both 7s are valid singles; deduplicated to one representative
+    const sevens = moves.filter(m => m.rank === '7');
+    expect(sevens).toHaveLength(1);
+  });
+
+  it('includes a rank when only a pair (not single) is valid — mustPlayDouble', () => {
+    // Under Jack rule, a single 7 is blocked but a pair of 7s is valid
+    const sevenH = c('7', 'hearts');
+    const sevenS = c('7', 'spades');
+    const pile = [c('J', 'diamonds')];
+    const player = makePlayer('p0', [sevenH, sevenS]);
+    const state = makeState(pile, { mustPlayDouble: true, lastEffectiveCard: pile[0] });
+    const moves = getValidMoves(player, state);
+    // Single 7 alone would fail mustPlayDouble, but the pair is valid
+    expect(moves.some(m => m.rank === '7')).toBe(true);
+  });
+
+  it('excludes a rank when neither single nor pair is valid', () => {
+    // Under mustPlayBelow7, player has K (invalid) and Q (invalid)
+    const player = makePlayer('p0', [c('K', 'hearts'), c('Q', 'spades')]);
+    const pile = [c('5', 'diamonds')];
+    const state = makeState(pile, { mustPlayBelow7: true, lastEffectiveCard: pile[0] });
+    expect(getValidMoves(player, state)).toHaveLength(0);
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// getBestMove
+// ══════════════════════════════════════════════════════════════════════════════
+
+describe('getBestMove — heuristic', () => {
+  it('returns null when no valid moves exist', () => {
+    const player = makePlayer('p0', [c('A', 'hearts'), c('K', 'hearts')]);
+    const pile = [c('5', 'diamonds')];
+    const state = makeState(pile, { mustPlayBelow7: true, lastEffectiveCard: pile[0] });
+    expect(getBestMove(player, state)).toBeNull();
+  });
+
+  it('conserves 10 when a normal card is also valid', () => {
+    const five = c('5', 'hearts');
+    const ten = c('10', 'hearts');
+    const pile = [c('4', 'diamonds')];
+    const player = makePlayer('p0', [ten, five]);
+    const state = makeState(pile, { lastEffectiveCard: pile[0] });
+    const best = getBestMove(player, state);
+    expect(best?.rank).toBe('5'); // not 10
+  });
+
+  it('conserves 2 when a normal card is also valid', () => {
+    const nine = c('9', 'hearts');
+    const two = c('2', 'hearts');
+    const pile = [c('8', 'diamonds')];
+    const player = makePlayer('p0', [two, nine]);
+    const state = makeState(pile, { lastEffectiveCard: pile[0] });
+    const best = getBestMove(player, state);
+    expect(best?.rank).toBe('9'); // not 2
+  });
+
+  it('picks the weakest valid normal card', () => {
+    const five = c('5', 'hearts');
+    const nine = c('9', 'hearts');
+    const pile = [c('4', 'diamonds')];
+    const player = makePlayer('p0', [nine, five]); // nine listed first, but 5 is weaker
+    const state = makeState(pile, { lastEffectiveCard: pile[0] });
+    const best = getBestMove(player, state);
+    expect(best?.rank).toBe('5'); // value 2 < value 6
+  });
+
+  it('falls back to 10 when only specials are valid', () => {
+    // Under mustPlayBelow7, nothing except the allowed specials can play.
+    // Give player only 10 (blocked by mustPlayBelow7!) and 2.
+    // Wait — 10 IS blocked by mustPlayBelow7 per our rules.
+    // So let's test without mustPlayBelow7: pile has A (value 11),
+    // only 2 (value 12) and 10 (value 99) beat it normally.
+    const ace = c('A', 'diamonds');
+    const two = c('2', 'hearts');
+    const ten = c('10', 'hearts');
+    const player = makePlayer('p0', [two, ten]);
+    const state = makeState([ace], { lastEffectiveCard: ace });
+    const best = getBestMove(player, state);
+    // Both 2 and 10 are valid (2 value 12 >= 11, 10 always valid).
+    // Neither is a normal card — fall back: 10 returned before 2.
+    expect(best?.rank).toBe('10');
+  });
+
+  it('falls back to 2 when only 2 is valid', () => {
+    const aceH = c('A', 'hearts');
+    const two = c('2', 'hearts');
+    const player = makePlayer('p0', [two]);
+    const state = makeState([aceH], { lastEffectiveCard: aceH });
+    const best = getBestMove(player, state);
+    expect(best?.rank).toBe('2');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// initGame
+// ══════════════════════════════════════════════════════════════════════════════
+
+function barePlayer(id: string): Player {
+  return {
+    id,
+    name: id,
+    isBot: false,
+    isReady: false,
+    hand: [],
+    visibleCards: [],
+    hiddenCards: [],
+    stats: { gamesPlayed: 0, placements: [0, 0, 0, 0], achievements: [] },
+  };
+}
+
+describe('initGame', () => {
+  it('sets phase to PREPARATION', () => {
+    const state = initGame([barePlayer('p0'), barePlayer('p1')], { mode: 'patriarchal' });
+    expect(state.phase).toBe('PREPARATION');
+  });
+
+  it('deals exactly 9 cards per player (3 hidden + 3 visible + 3 hand)', () => {
+    const state = initGame(
+      [barePlayer('p0'), barePlayer('p1'), barePlayer('p2')],
+      { mode: 'patriarchal' },
+    );
+    for (const player of state.players) {
+      const total = player.hand.length + player.visibleCards.length + player.hiddenCards.length;
+      expect(total).toBe(9);
+      expect(player.hand).toHaveLength(3);
+      expect(player.visibleCards).toHaveLength(3);
+      expect(player.hiddenCards).toHaveLength(3);
+    }
+  });
+
+  it('leaves correct number of cards in deck (52 − n×9)', () => {
+    const n = 4;
+    const state = initGame(
+      Array.from({ length: n }, (_, i) => barePlayer(`p${i}`)),
+      { mode: 'patriarchal' },
+    );
+    expect(state.deck).toHaveLength(52 - n * 9); // 52 − 36 = 16
+  });
+
+  it('deck + all player cards account for all 52 cards (no duplicates)', () => {
+    const state = initGame(
+      [barePlayer('p0'), barePlayer('p1'), barePlayer('p2'), barePlayer('p3')],
+      { mode: 'patriarchal' },
+    );
+    const allIds = [
+      ...state.deck,
+      ...state.players.flatMap(p => [...p.hand, ...p.visibleCards, ...p.hiddenCards]),
+    ].map(c => c.id);
+    const unique = new Set(allIds);
+    expect(unique.size).toBe(52);
+    expect(allIds).toHaveLength(52);
+  });
+
+  it('starts with currentPlayerIndex 0', () => {
+    const state = initGame([barePlayer('p0'), barePlayer('p1')], { mode: 'patriarchal' });
+    expect(state.currentPlayerIndex).toBe(0);
+  });
+
+  it('clears all turnContext flags', () => {
+    const state = initGame([barePlayer('p0'), barePlayer('p1')], { mode: 'matriarchal' });
+    const ctx = state.turnContext;
+    expect(ctx.mustPlayDouble).toBe(false);
+    expect(ctx.mustFollowSuit).toBeNull();
+    expect(ctx.mustPlayBelow7).toBe(false);
+    expect(ctx.lastEffectiveCard).toBeNull();
+    expect(ctx.attackTarget).toBeNull();
+  });
+
+  it('stores the passed config in the state', () => {
+    const state = initGame([barePlayer('p0'), barePlayer('p1')], { mode: 'matriarchal' });
+    expect(state.config.mode).toBe('matriarchal');
+  });
+
+  it('pile and discard are empty at start', () => {
+    const state = initGame([barePlayer('p0'), barePlayer('p1')], { mode: 'patriarchal' });
+    expect(state.pile).toHaveLength(0);
+    expect(state.discard).toHaveLength(0);
   });
 });

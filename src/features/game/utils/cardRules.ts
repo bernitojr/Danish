@@ -1,4 +1,5 @@
 import type { Card, GameState, Player, RulesConfig, TurnContext } from '@/features/game/utils/types';
+import { createDeck } from '@/features/game/utils/deck';
 
 // Ranks whose face value is ≤ 7 — the only ranks legal under the 7 rule.
 // 10 is NOT allowed under the 7 rule (handled explicitly in the 10 branch).
@@ -54,8 +55,14 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
 
   // ── 2. Jack rule — must play a double ────────────────────────────────────
   // 2, 3 and J satisfy the obligation as singles; all other ranks require N ≥ 2.
+  // Once satisfied, pairs of ANY value are legal (including lower than J) — so
+  // we return immediately and skip the value comparison.
   if (turnContext.mustPlayDouble) {
     if (!JACK_EXCEPTION_RANKS.has(rank) && cards.length < 2) return false;
+    // Obligation satisfied — bypass value check. Only rank '4' on an empty pile
+    // remains forbidden (cannot open a fresh pile with the weakest card).
+    if (pile.length === 0 && rank === '4') return false;
+    return true;
   }
 
   // ── 3. Seven rule — must play ≤ 7 ────────────────────────────────────────
@@ -285,5 +292,156 @@ export function applyPlay(
     finishOrder: newFinishOrder,
     validMoves: [],
     bestMove: null,
+  };
+}
+
+// ── Ranks to conserve — played only when no normal card is available ───────────
+const HOLD_RANKS = new Set<Card['rank']>(['2', '10', 'A']);
+
+/**
+ * Returns all uniquely-playable cards for `player` in the current state.
+ *
+ * Active zone (in source order):
+ *   hand → visibleCards (hand empty) → hiddenCards (visible empty)
+ *
+ * Deduplication: one representative card per rank.
+ * A rank is included if ANY grouping of that rank (single / pair / triple)
+ * passes isValidPlay — covering the mustPlayDouble case where singles are
+ * blocked but pairs are valid.
+ *
+ * Pure function — never mutates.
+ */
+export function getValidMoves(player: Player, state: GameState): Card[] {
+  const zone =
+    player.hand.length > 0
+      ? player.hand
+      : player.visibleCards.length > 0
+        ? player.visibleCards
+        : player.hiddenCards;
+
+  // Group by rank, preserving first-seen insertion order
+  const byRank = new Map<Card['rank'], Card[]>();
+  for (const card of zone) {
+    const existing = byRank.get(card.rank);
+    byRank.set(card.rank, existing ? [...existing, card] : [card]);
+  }
+
+  const result: Card[] = [];
+  for (const group of byRank.values()) {
+    let canPlay = false;
+    for (let n = 1; n <= group.length && !canPlay; n++) {
+      if (isValidPlay(group.slice(0, n), state)) canPlay = true;
+    }
+    if (canPlay) result.push(group[0]);
+  }
+
+  return result;
+}
+
+/**
+ * Returns the single best card to play using a fixed priority heuristic:
+ *   1. Weakest valid normal card (conserve specials)
+ *   2. Ace — only if another player has fewer total cards (meaningful attack)
+ *   3. 10 (cut is powerful)
+ *   4. 2 (reset — weakest special)
+ *   5. Ace as absolute last resort
+ *   6. null — no valid moves
+ *
+ * Pure function — never mutates.
+ */
+export function getBestMove(player: Player, state: GameState): Card | null {
+  const valid = getValidMoves(player, state);
+  if (valid.length === 0) return null;
+
+  // Prefer the weakest valid normal card
+  const normals = valid.filter(c => !HOLD_RANKS.has(c.rank));
+  if (normals.length > 0) {
+    return normals.reduce((best, card) =>
+      getEffectiveValue(card, state.config) < getEffectiveValue(best, state.config) ? card : best,
+    );
+  }
+
+  // Only specials remain — apply hold heuristics
+  const ace = valid.find(c => c.rank === 'A');
+  if (ace) {
+    // Play Ace only when another player is clearly more advanced (fewest total cards)
+    const others = state.players.filter(p => p.id !== player.id);
+    if (others.length > 0) {
+      const playerTotal =
+        player.hand.length + player.visibleCards.length + player.hiddenCards.length;
+      const target = others.reduce((best, p) => {
+        const cntBest = best.hand.length + best.visibleCards.length + best.hiddenCards.length;
+        const cntP = p.hand.length + p.visibleCards.length + p.hiddenCards.length;
+        return cntP < cntBest ? p : best;
+      }, others[0]);
+      const targetTotal = target.hand.length + target.visibleCards.length + target.hiddenCards.length;
+      if (targetTotal < playerTotal) return ace;
+    }
+  }
+
+  // 10 cuts the pile — strong play; 2 resets — moderate; Ace falls back here
+  const ten = valid.find(c => c.rank === '10');
+  if (ten) return ten;
+  const two = valid.find(c => c.rank === '2');
+  if (two) return two;
+  if (ace) return ace;
+
+  return null; // unreachable if valid.length > 0, but satisfies TS
+}
+
+// ── initGame helper ───────────────────────────────────────────────────────────
+
+function shuffleDeck(cards: Card[]): Card[] {
+  const arr = [...cards];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
+/**
+ * Creates a fresh shuffled GameState ready for the PREPARATION phase.
+ *
+ * Deals per player (in order):
+ *   - 3 hiddenCards (face-down)
+ *   - 3 visibleCards (face-up on top of hidden)
+ *   - 3 hand cards
+ *
+ * Remaining cards stay in deck. currentPlayerIndex = 0 (dealer plays first).
+ * All TurnContext flags are cleared.
+ *
+ * Pure function — player objects are not mutated (new objects returned).
+ */
+export function initGame(players: Player[], config: RulesConfig): GameState {
+  const shuffled = shuffleDeck(createDeck());
+  const n = players.length;
+
+  const dealtPlayers = players.map((player, i) => {
+    const offset = i * 9;
+    return {
+      ...player,
+      hiddenCards: shuffled.slice(offset, offset + 3),
+      visibleCards: shuffled.slice(offset + 3, offset + 6),
+      hand: shuffled.slice(offset + 6, offset + 9),
+    };
+  });
+
+  return {
+    phase: 'PREPARATION',
+    players: dealtPlayers,
+    currentPlayerIndex: 0,
+    deck: shuffled.slice(n * 9),
+    pile: [],
+    discard: [],
+    turnContext: { ...CLEARED_CONTEXT },
+    config,
+    helperActive: false,
+    validMoves: [],
+    bestMove: null,
+    emotes: [],
+    finishOrder: [],
   };
 }
