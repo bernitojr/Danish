@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@letele/playing-cards": "^0.1.0",
     "@supabase/supabase-js": "^2.102.1",
     "autoprefixer": "^10.4.27",
     "framer-motion": "^12.38.0",

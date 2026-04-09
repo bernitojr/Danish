@@ -12,7 +12,10 @@
       "Bash(npm test:*)",
       "Bash(npx vitest:*)",
       "Bash(node:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(git stash:*)",
+      "Bash(npx vite:*)",
+      "Bash(wc:*)"
     ]
   }
 }

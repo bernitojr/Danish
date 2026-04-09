@@ -1,10 +1,12 @@
 import { create } from 'zustand';
-import type { BotDifficulty, Card, GameState, Player } from '@/features/game/utils/types';
+import type { BotDifficulty, Card, GameState, Player, TurnContext } from '@/features/game/utils/types';
 import {
   initGame,
   isValidPlay,
   applyPlay,
   getBotMove,
+  getValidMoves,
+  getBestMove,
 } from '@/features/game/utils/cardRules';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -47,10 +49,40 @@ function totalCards(p: Player): number {
   return p.hand.length + p.visibleCards.length + p.hiddenCards.length;
 }
 
+/** Push gs onto history (max 10) when in PLAYING phase. */
+function pushHistory(history: GameState[], gs: GameState): GameState[] {
+  if (gs.phase !== 'PLAYING') return history;
+  return [...history, gs].slice(-10);
+}
+
+/** Stamp fresh validMoves / bestMove onto a state before storing it. */
+function withDerivedFields(gs: GameState): GameState {
+  const current = gs.players[gs.currentPlayerIndex];
+  if (!current || gs.phase !== 'PLAYING') return gs;
+  return {
+    ...gs,
+    validMoves: getValidMoves(current, gs),
+    bestMove: getBestMove(current, gs),
+  };
+}
+
 // ── Store definition ──────────────────────────────────────────────────────────
+
+const CLEARED_CONTEXT: TurnContext = {
+  mustPlayDouble: false,
+  mustFollowSuit: null,
+  mustFollowAboveValue: null,
+  mustPlayBelow7: false,
+  lastEffectiveCard: null,
+  consecutiveSameValue: 0,
+  lastPlayedValue: null,
+  skippedPlayers: 0,
+  attackTarget: null,
+};
 
 interface GameStore {
   gameState: GameState | null;
+  stateHistory: GameState[];
   difficulty: BotDifficulty;
   isPlayerTurn: boolean;
 
@@ -59,12 +91,15 @@ interface GameStore {
   swapCard: (handCard: Card, visibleCard: Card) => void;
   setReady: () => void;
   triggerBotTurn: () => void;
+  takePile: () => void;
+  undoLastMove: () => void;
   resetGame: () => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   // ── Initial state ───────────────────────────────────────────────────────────
   gameState: null,
+  stateHistory: [],
   difficulty: 'medium',
   isPlayerTurn: false,
 
@@ -101,9 +136,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   playCards: (cards, targetId = null) => {
     const gs = get().gameState;
     if (!gs) return;
-    if (!isValidPlay(cards, gs)) return;
-    const next = applyPlay(cards, targetId ?? null, gs);
-    set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) });
+
+    // Detect hidden card play (hand and visible both empty for current player)
+    const currentPlayer = gs.players[gs.currentPlayerIndex];
+    const isHiddenPlay =
+      currentPlayer !== undefined &&
+      currentPlayer.hand.length === 0 &&
+      currentPlayer.visibleCards.length === 0 &&
+      cards.every(c => currentPlayer.hiddenCards.some(h => h.id === c.id));
+
+    if (!isValidPlay(cards, gs)) {
+      // Invalid hidden card → auto-take pile (rule: player keeps hidden card + takes pile)
+      if (isHiddenPlay) get().takePile();
+      return;
+    }
+    const next = withDerivedFields(applyPlay(cards, targetId ?? null, gs));
+    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
   },
 
   /**
@@ -149,14 +197,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const gs = get().gameState;
     if (!gs || gs.phase !== 'PREPARATION') return;
 
+    // Mark human ready; bots are already ready — transition immediately.
     const newPlayers = gs.players.map(p => (p.isBot ? p : { ...p, isReady: true }));
     const allReady = newPlayers.every(p => p.isReady);
-    const next: GameState = {
+    const partial: GameState = { ...gs, players: newPlayers, phase: allReady ? 'PLAYING' : gs.phase };
+    const next = withDerivedFields(partial);
+    set({ gameState: next, stateHistory: [], isPlayerTurn: deriveIsPlayerTurn(next) });
+  },
+
+  /**
+   * Human takes the whole pile when they cannot play.
+   * Validates that no valid move exists, then moves all pile cards into the
+   * human's hand, clears the pile, resets TurnContext, and advances to the
+   * next player (index + 1, wrapping).
+   */
+  takePile: () => {
+    const gs = get().gameState;
+    if (!gs || gs.phase !== 'PLAYING') return;
+
+    const human = gs.players[gs.currentPlayerIndex];
+    if (!human || human.isBot) return;
+    if (getValidMoves(human, gs).length > 0) return; // must have no valid move
+
+    const newHuman: Player = { ...human, hand: [...human.hand, ...gs.pile] };
+    const newPlayers = gs.players.map((p, i) =>
+      i === gs.currentPlayerIndex ? newHuman : p,
+    );
+    const nextIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+    console.log(`[${human.name}] cannot play — takes the pile (${gs.pile.length} cards)`);
+    const next = withDerivedFields({
       ...gs,
       players: newPlayers,
-      phase: allReady ? 'PLAYING' : gs.phase,
-    };
-    set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) });
+      pile: [],
+      turnContext: CLEARED_CONTEXT,
+      currentPlayerIndex: nextIndex,
+    });
+    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
   },
 
   /**
@@ -178,7 +254,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!bot || !bot.isBot) return;
 
     const botCards = getBotMove(bot, gs, difficulty);
-    if (botCards.length === 0) return; // no valid move — caller handles take-pile
+    if (botCards.length === 0) {
+      // Bot cannot play — takes the pile
+      const newBot: Player = { ...bot, hand: [...bot.hand, ...gs.pile] };
+      const newPlayers = gs.players.map((p, i) =>
+        i === gs.currentPlayerIndex ? newBot : p,
+      );
+      const nextIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+      console.log(`[${bot.name}] cannot play — takes the pile (${gs.pile.length} cards)`);
+      const next = withDerivedFields({
+        ...gs,
+        players: newPlayers,
+        pile: [],
+        turnContext: CLEARED_CONTEXT,
+        currentPlayerIndex: nextIndex,
+      });
+      set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
+      return;
+    }
 
     // Safety: confirm the chosen play is still valid (guards async race conditions)
     if (!isValidPlay(botCards, gs)) return;
@@ -194,8 +287,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     }
 
-    const next = applyPlay(botCards, targetId, gs);
-    set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) });
+    const next = withDerivedFields(applyPlay(botCards, targetId, gs));
+    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
   },
 
   /**
@@ -204,7 +297,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Called when returning to the lobby or starting over. Does not call any
    * engine function — just nulls out `gameState`.
    */
+  undoLastMove: () => {
+    const { stateHistory } = get();
+    if (stateHistory.length === 0) return;
+    const prev = stateHistory[stateHistory.length - 1];
+    set({ gameState: prev, stateHistory: stateHistory.slice(0, -1), isPlayerTurn: deriveIsPlayerTurn(prev) });
+  },
+
   resetGame: () => {
-    set({ gameState: null, isPlayerTurn: false });
+    set({ gameState: null, stateHistory: [], isPlayerTurn: false });
   },
 }));
