@@ -104,7 +104,7 @@ interface GameStore {
   isPlayerTurn: boolean;
 
   startGame: (playerName: string, difficulty: BotDifficulty) => void;
-  playCards: (cards: Card[], targetId?: string | null) => void;
+  playCards: (cards: Card[], targetId?: string | null) => boolean;
   swapCard: (handCard: Card, visibleCard: Card) => void;
   setReady: () => void;
   triggerBotTurn: () => void;
@@ -153,7 +153,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
    */
   playCards: (cards, targetId = null) => {
     const gs = get().gameState;
-    if (!gs) return;
+    if (!gs) return false;
 
     // Detect hidden card play (hand and visible both empty for current player)
     const currentPlayer = gs.players[gs.currentPlayerIndex];
@@ -182,10 +182,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({ gameState: { ...gs, players: newPlayers } });
         get().takePile();
       }
-      return;
+      return false;
     }
     const next = withDerivedFields(applyPlay(cards, targetId ?? null, gs));
     set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
+    return true;
   },
 
   /**

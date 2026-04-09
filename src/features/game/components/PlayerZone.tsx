@@ -56,6 +56,10 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
   const visibleEmpty = player.visibleCards.length === 0;
   const hiddenActive = !isPreparing && handEmpty && visibleEmpty;
 
+  // UX 1 — sort by value ascending (weakest left, strongest right)
+  const sortedHand = [...player.hand].sort((a, b) => a.value - b.value);
+  const sortedVisible = [...player.visibleCards].sort((a, b) => a.value - b.value);
+
   function handleHandClick(card: Card) {
     if (isPreparing) { setPendingSwap(prev => (prev?.id === card.id ? null : card)); }
     else { onCardClick(card); }
@@ -84,11 +88,11 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
         <div key={c.id} className="relative">
           <GameCard card={null} state={hiddenActive ? 'selected' : 'hidden'}
             onClick={hiddenActive ? () => onCardClick(c) : undefined} />
-          {player.visibleCards[i] && (
+          {sortedVisible[i] && (
             <div className="absolute -top-2 left-0">
-              <GameCard card={player.visibleCards[i]}
-                state={isPreparing && pendingSwap ? 'selected' : !isPreparing && handEmpty ? cardState(player.visibleCards[i], validMoves, bestMove, selectedCardIds) : 'normal'}
-                onClick={() => handleVisibleClick(player.visibleCards[i])} />
+              <GameCard card={sortedVisible[i]}
+                state={isPreparing && pendingSwap ? 'selected' : !isPreparing && handEmpty ? cardState(sortedVisible[i], validMoves, bestMove, selectedCardIds) : 'normal'}
+                onClick={() => handleVisibleClick(sortedVisible[i])} />
             </div>
           )}
         </div>
@@ -97,11 +101,17 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
   );
 
   if (!isHuman) {
+    // UX 5 — cap displayed bot hand at 5 cards, show "+N" badge for extras
+    const displayHand = player.hand.slice(0, 5);
+    const extra = player.hand.length - 5;
     return (
       <div className="flex flex-col items-center gap-1">
         {tableCards}
         {player.hand.length > 0 && (
-          <FanRow cards={player.hand} isHidden validMoves={[]} bestMove={null} selectedIds={[]} onCardClick={() => {}} />
+          <div className="flex items-center">
+            <FanRow cards={displayHand} isHidden validMoves={[]} bestMove={null} selectedIds={[]} onCardClick={() => {}} />
+            {extra > 0 && <span className="text-white/60 text-xs ml-1">+{extra}</span>}
+          </div>
         )}
         {banner}
       </div>
@@ -122,7 +132,7 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
       </div>
       <div className={`flex flex-col items-center gap-1 px-3 py-2 bg-black/30 rounded-lg border border-white/10 ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}>
         <span className="text-white/40 text-[10px] uppercase tracking-wide">En main</span>
-        <FanRow cards={player.hand} isHidden={false} validMoves={validMoves} bestMove={bestMove} selectedIds={selectedCardIds} onCardClick={handleHandClick} />
+        <FanRow cards={sortedHand} isHidden={false} validMoves={validMoves} bestMove={bestMove} selectedIds={selectedCardIds} onCardClick={handleHandClick} />
         {isPreparing && pendingSwap && (
           <p className="text-yellow-300 text-[10px] mt-0.5">Cliquez une carte visible pour échanger</p>
         )}
