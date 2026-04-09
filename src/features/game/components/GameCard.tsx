@@ -48,10 +48,13 @@ export function GameCard({ card, state = 'normal', onClick, disabled = false }: 
     const Back = cardMap['B1'];
     return (
       <div
-        className={`${baseClass} ${ringClass} ${cursorClass} overflow-hidden`}
+        className={`${baseClass} ${ringClass} ${cursorClass} relative overflow-hidden`}
         onClick={disabled ? undefined : onClick}
       >
-        <Back className="w-full h-full" />
+        <Back style={{ width: '100%', height: '100%' }} />
+        {/* <div className="absolute inset-0 flex items-center justify-center">
+          <img src="/logoBC-sansTexte.png" alt="logo" className="w-8 h-8 object-contain opacity-90" />
+        </div> */}
       </div>
     );
   }
