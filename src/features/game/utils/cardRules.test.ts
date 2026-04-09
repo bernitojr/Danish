@@ -77,7 +77,8 @@ describe('card 2', () => {
 
 // ── 3 ─────────────────────────────────────────────────────────────────────
 // Value 0 — copies previous card. Never gated by a value comparison on a
-// non-empty pile. Allowed under 7 rule and as a single under Jack rule.
+// non-empty pile. Allowed under 7 rule. Under Jack rule, must be played as a
+// double — single 3 is NOT a Jack exception (BUG 1 fix).
 
 describe('card 3', () => {
   it('valid — copies Q on pile; 3 is not value-gated on a non-empty pile', () => {
@@ -220,6 +221,25 @@ describe('card J', () => {
     const five = c('5');
     const state = makeState([five], { mustPlayDouble: true, lastEffectiveCard: five });
     expect(isValidPlay([c('Q')], state)).toBe(false);
+  });
+
+  // BUG 1: 2 and 3 are no longer single-card Jack exceptions
+  it('invalid — single 2 under mustPlayDouble (only J is a single-card exception)', () => {
+    const five = c('5');
+    const state = makeState([five], { mustPlayDouble: true, lastEffectiveCard: five });
+    expect(isValidPlay([c('2')], state)).toBe(false);
+  });
+
+  it('invalid — single 3 under mustPlayDouble (only J is a single-card exception)', () => {
+    const five = c('5');
+    const state = makeState([five], { mustPlayDouble: true, lastEffectiveCard: five });
+    expect(isValidPlay([c('3')], state)).toBe(false);
+  });
+
+  it('valid — pair of 2s satisfies mustPlayDouble', () => {
+    const five = c('5');
+    const state = makeState([five], { mustPlayDouble: true, lastEffectiveCard: five });
+    expect(isValidPlay([c('2', 'hearts'), c('2', 'spades')], state)).toBe(true);
   });
 });
 
@@ -375,8 +395,10 @@ function makePlayer(
   return {
     id,
     name: id,
+    title: '',
     isBot: false,
     isReady: true,
+    isFinished: false,
     hand,
     visibleCards: visible,
     hiddenCards: hidden,
@@ -628,13 +650,14 @@ describe('applyPlay — card 3 mirrors full effect of previous card', () => {
   });
 
   // Case B: 3 after J → mustPlayDouble propagated to next player
+  // NB: single 3 under mustPlayDouble is invalid after BUG 1 fix; applyPlay does not
+  // validate — this test exercises context propagation only (use a pair in real gameplay).
   it('Case B — 3 after J propagates mustPlayDouble to next player', () => {
     const jack = c('J', 'hearts');
     const three = c('3', 'hearts');
     const p0 = makePlayer('p0', [jack, c('5', 'hearts'), c('6', 'hearts')]);
     const p1 = makePlayer('p1', [three, c('5', 'spades'), c('6', 'spades')]);
     const p2 = makePlayer('p2', [c('4', 'clubs'), c('5', 'clubs'), c('6', 'clubs')]);
-    // p1 plays single 3 under Jack rule (3 is a Jack exception — valid as single)
     const state = makeApplyState([p0, p1, p2], 1, {
       pile: [jack],
       context: { mustPlayDouble: true, lastEffectiveCard: jack },
@@ -663,6 +686,28 @@ describe('applyPlay — card 3 mirrors full effect of previous card', () => {
     expect(next.turnContext.mustFollowSuit).toBe('hearts');
     expect(next.turnContext.mustFollowAboveValue).toBe(sixH.value);
     expect(next.currentPlayerIndex).toBe(2);
+  });
+
+  // Case D: 3 after 7 → mustPlayBelow7 propagated; next player's valid moves are ≤7 only
+  it('Case D — 3 after 7 propagates mustPlayBelow7; getValidMoves excludes high-value cards', () => {
+    const seven = c('7', 'hearts');
+    const three = c('3', 'hearts');
+    const p0 = makePlayer('p0', [seven, c('8', 'hearts'), c('9', 'hearts')]);
+    const p1 = makePlayer('p1', [three, c('5', 'spades'), c('6', 'spades')]);
+    const p2 = makePlayer('p2', [c('8', 'clubs'), c('9', 'clubs'), c('K', 'clubs'), c('2', 'clubs'), c('5', 'clubs')]);
+    const state = makeApplyState([p0, p1, p2], 1, {
+      pile: [seven],
+      context: { mustPlayBelow7: true, lastEffectiveCard: seven },
+    });
+    const next = applyPlay([three], null, state);
+    expect(next.turnContext.mustPlayBelow7).toBe(true);
+    expect(next.currentPlayerIndex).toBe(2);
+    const validRanks = getValidMoves(next.players[2]!, next).map(card => card.rank);
+    expect(validRanks).toContain('2');
+    expect(validRanks).toContain('5');
+    expect(validRanks).not.toContain('8');
+    expect(validRanks).not.toContain('9');
+    expect(validRanks).not.toContain('K');
   });
 
   // 2x3 under Jack: satisfies mustPlayDouble AND propagates it to next player
@@ -953,8 +998,10 @@ function barePlayer(id: string): Player {
   return {
     id,
     name: id,
+    title: '',
     isBot: false,
     isReady: false,
+    isFinished: false,
     hand: [],
     visibleCards: [],
     hiddenCards: [],

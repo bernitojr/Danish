@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import confetti from 'canvas-confetti';
 import type { Player } from '@/features/game/utils/types';
 
 interface Props {
@@ -10,12 +11,21 @@ interface Props {
 }
 
 const MEDALS = ['🥇', '🥈', '🥉', '4️⃣'];
-const COLORS = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#c77dff', '#ff9f1c'];
 
 export function EndScreen({ players, finishOrder, humanId, onHide, onReplay }: Props) {
   const placement = finishOrder.indexOf(humanId) + 1;
   const human = players.find(p => p.id === humanId);
   const [counts, setCounts] = useState({ played: 0, wins: 0, podiums: 0 });
+
+  useEffect(() => {
+    const end = Date.now() + 3000;
+    const frame = () => {
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'] });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1'] });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
+  }, []);
 
   useEffect(() => {
     if (!human) return;
@@ -36,12 +46,7 @@ export function EndScreen({ players, finishOrder, humanId, onHide, onReplay }: P
   }, [human]);
 
   return (
-    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50 overflow-hidden">
-      {Array.from({ length: 20 }, (_, i) => (
-        <div key={i} className="absolute w-2 h-2 rounded-sm pointer-events-none"
-          style={{ background: COLORS[i % COLORS.length], left: `${(i * 5.3) % 100}%`, top: '-8px',
-            animation: `fall ${2 + (i % 3) * 0.65}s ${(i * 0.18) % 1.2}s linear infinite` }} />
-      ))}
+    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-7 text-center min-w-[280px] z-10 relative shadow-2xl">
         <div className="text-5xl mb-2">{MEDALS[placement - 1] ?? '🎮'}</div>
         <h2 className="text-xl font-bold mb-1">{placement <= 3 ? 'Félicitations !' : 'Partie terminée'}</h2>

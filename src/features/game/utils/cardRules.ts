@@ -5,9 +5,9 @@ import { createDeck } from '@/features/game/utils/deck';
 // 10 is NOT allowed under the 7 rule (handled explicitly in the 10 branch).
 const BELOW_7_RANKS = new Set<Card['rank']>(['2', '3', '4', '5', '6', '7']);
 
-// Ranks exempt from Jack's "must play a double" obligation.
-// 10 is also exempt but is handled before this check.
-const JACK_EXCEPTION_RANKS = new Set<Card['rank']>(['2', '3', 'J']);
+// Only J may be played as a single to satisfy mustPlayDouble.
+// 2 and 3 require a pair. 10 bypasses this check entirely (handled in branch 1).
+const JACK_EXCEPTION_RANKS = new Set<Card['rank']>(['J']);
 
 /**
  * Returns the effective value of a card given the current rules config.
@@ -54,7 +54,7 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
   }
 
   // ── 2. Jack rule — must play a double ────────────────────────────────────
-  // 2, 3 and J satisfy the obligation as singles; all other ranks require N ≥ 2.
+  // Only J satisfies the obligation as a single; all other ranks require N ≥ 2.
   // Once satisfied, pairs of ANY value are legal (including lower than J) — so
   // we return immediately and skip the value comparison.
   if (turnContext.mustPlayDouble) {
@@ -207,10 +207,14 @@ export function applyPlay(
           mustFollowSuit: mirrored?.rank === '6' ? mirrored.suit : null,
           mustFollowAboveValue:
             mirrored?.rank === '6' ? getEffectiveValue(mirrored, config) : null,
+          // 7 → next player must still play ≤ 7
+          mustPlayBelow7: mirrored?.rank === '7',
           // J → next player must still play a double
           mustPlayDouble: mirrored?.rank === 'J',
           // 8 → next player is skipped (advancement handled below)
           skippedPlayers: mirrored?.rank === '8' ? 1 : 0,
+          // A → carry attack target forward
+          attackTarget: mirrored?.rank === 'A' ? turnContext.attackTarget : null,
         };
         break;
       }

@@ -15,6 +15,7 @@
     "@letele/playing-cards": "^0.1.0",
     "@supabase/supabase-js": "^2.102.1",
     "autoprefixer": "^10.4.27",
+    "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.38.0",
     "postcss": "^8.5.8",
     "react": "^19.2.4",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

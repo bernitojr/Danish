@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/features/game/store/gameStore';
+import { useGameLog } from '@/features/game/hooks/useGameLog';
 import { PlayerZone } from './PlayerZone';
 import { GameCard } from './GameCard';
 import { EndScreen } from './EndScreen';
@@ -9,14 +10,15 @@ const EMOTES = ['😊', '😐', '😍', '😵'];
 const CHAT = ['Bien joué !', 'Oups...', 'Sérieux ?!', 'Trop drôle'];
 
 export function GameBoard() {
-  const { gameState, isPlayerTurn, playCards, swapCard, setReady, triggerBotTurn, takePile,
-    undoLastMove, stateHistory, sendEmote, resetGame, startGame, difficulty } = useGameStore();
+  const { gameState, isPlayerTurn, playCards, swapCard, setReady, triggerBotTurn,
+    takePile, undoLastMove, stateHistory, sendEmote, resetGame, startGame, difficulty } = useGameStore();
   const [pendingAce, setPendingAce] = useState<Card | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
   const [bubbles, setBubbles] = useState<Record<string, string>>({});
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null);
   const [showEnd, setShowEnd] = useState(true);
+  const { entries: gameLog, push: addLog } = useGameLog(gameState, isPlayerTurn);
 
   useEffect(() => {
     if (!gameState || gameState.phase !== 'PLAYING' || isPlayerTurn) return;
@@ -30,7 +32,7 @@ export function GameBoard() {
     const t = setTimeout(() => setGameStarted(true), 500);
     return () => clearTimeout(t);
   }, [gameState?.phase]);
-  useEffect(() => { setShowEnd(true); }, [gameState?.phase]);
+  useEffect(() => { if (gameState?.phase === 'PREPARATION') setShowEnd(true); }, [gameState?.phase]);
 
   const lastEmote = gameState?.emotes.at(-1);
   useEffect(() => {
@@ -42,10 +44,11 @@ export function GameBoard() {
 
   if (!gameState) return <div className="flex items-center justify-center h-screen bg-green-900 text-white"><p>No game in progress.</p></div>;
 
-  const { players, pile, deck, currentPlayerIndex, validMoves, bestMove, phase, finishOrder } = gameState;
+  const { players, pile, deck, currentPlayerIndex, validMoves, bestMove, phase, finishOrder, turnContext } = gameState;
   const [human, bot1, bot2, bot3] = players;
   const isPreparing = phase === 'PREPARATION';
-  const cannotPlay = gameStarted && isPlayerTurn && !isPreparing && !pendingAce && validMoves.length === 0;
+  const cannotPlay = gameStarted && isPlayerTurn && !isPreparing && !pendingAce
+    && validMoves.length === 0 && human.hiddenCards.length === 0;
   const pileTop3 = pile.slice(-3);
 
   function handleCardClick(card: Card) {
@@ -56,14 +59,14 @@ export function GameBoard() {
 
   function handlePileClick() {
     if (!selectedCards.length || pendingAce) return;
-    if (selectedCards.some(c => c.rank === 'A') && !gameState.turnContext.mustPlayDouble) {
+    if (selectedCards.some(c => c.rank === 'A') && !turnContext.mustPlayDouble) {
       setPendingAce(selectedCards.find(c => c.rank === 'A')!); return;
     }
     if (!playCards(selectedCards)) {
       const top = pile.at(-1);
       setInvalidMsg(`Tu ne peux pas jouer ${selectedCards[0].rank} sur ${top?.rank ?? 'vide'}`);
       setTimeout(() => setInvalidMsg(null), 2500);
-    } else setSelectedCards([]);
+    } else { addLog(`Tu joues ${selectedCards[0].rank}`); setSelectedCards([]); }
   }
 
   function Bubble({ id }: { id: string }) {
@@ -87,21 +90,24 @@ export function GameBoard() {
 
   return (
     <div className="relative min-h-screen bg-green-900 flex items-center justify-center p-4">
-      {phase === 'FINISHED' && showEnd && <EndScreen players={players} finishOrder={finishOrder}
+      {finishOrder.includes('human') && showEnd && <EndScreen players={players} finishOrder={finishOrder}
         humanId="human" onHide={() => setShowEnd(false)} onReplay={() => { resetGame(); startGame(human?.name ?? 'Joueur', difficulty); }} />}
       {stateHistory.length > 0 && phase === 'PLAYING' && (
         <button onClick={undoLastMove} className="absolute top-2 right-2 px-3 py-1 bg-black/40 hover:bg-black/60 text-white/70 text-xs rounded border border-white/20">↩ Retour</button>
       )}
-      {/* UX 4 — emote + chat sidebar */}
       <div className="fixed left-2 top-1/2 -translate-y-1/2 flex flex-col gap-3 bg-black/40 rounded-xl p-2 z-40">
         {EMOTES.map(e => <button key={e} className="text-2xl hover:scale-110 transition-transform" onClick={() => sendEmote('human', e)}>{e}</button>)}
         <div className="w-px h-4 bg-white/20 mx-auto" />
         {CHAT.map(msg => <button key={msg} className="text-white/70 text-[10px] hover:text-white text-left leading-tight max-w-[48px]" onClick={() => sendEmote('human', msg)}>{msg}</button>)}
       </div>
+      {gameLog.length > 0 && (
+        <div className="fixed bottom-4 right-4 flex flex-col gap-1 z-40 max-w-[180px]">
+          {gameLog.map((entry, i) => <div key={i} className={`px-2 py-1 rounded text-xs ${i === 0 ? 'bg-black/70 text-white' : 'bg-black/40 text-white/50'}`}>{entry}</div>)}
+        </div>
+      )}
       <div className="grid grid-cols-3 grid-rows-3 gap-4 w-full max-w-3xl">
         <div /><div><BotZone player={bot2} idx={2} /></div><div />
         <div><BotZone player={bot1} idx={1} /></div>
-        {/* UX 2 — center cell: pile/deck + Ramasser + toast */}
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-center gap-1">
@@ -130,18 +136,8 @@ export function GameBoard() {
             isPreparing={isPreparing} cannotPlay={cannotPlay} validMoves={pendingAce ? [] : validMoves}
             bestMove={pendingAce ? null : bestMove} selectedCardIds={selectedCards.map(c => c.id)}
             onCardClick={handleCardClick} onSwap={swapCard} />
-          {isPreparing && (
-            <div className="px-4 py-3 bg-black/50 rounded-lg border border-yellow-500/40 flex flex-col items-center gap-2">
-              <p className="text-yellow-300 text-sm font-medium">Phase de préparation — échangez vos cartes</p>
-              <button className="px-5 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded text-sm" onClick={setReady}>Je suis prêt ✓</button>
-            </div>
-          )}
-          {pendingAce && (
-            <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3">
-              <span className="text-red-300 text-sm font-medium">Choisissez un joueur à attaquer</span>
-              <button className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded" onClick={() => setPendingAce(null)}>Annuler</button>
-            </div>
-          )}
+          {isPreparing && <div className="px-4 py-3 bg-black/50 rounded-lg border border-yellow-500/40 flex flex-col items-center gap-2"><p className="text-yellow-300 text-sm font-medium">Phase de préparation — échangez vos cartes</p><button className="px-5 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded text-sm" onClick={setReady}>Je suis prêt ✓</button></div>}
+          {pendingAce && <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3"><span className="text-red-300 text-sm font-medium">Choisissez un joueur à attaquer</span><button className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded" onClick={() => setPendingAce(null)}>Annuler</button></div>}
         </div>
         <div />
       </div>
