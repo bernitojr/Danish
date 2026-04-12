@@ -213,8 +213,8 @@ export function applyPlay(
           mustPlayDouble: mirrored?.rank === 'J',
           // 8 → next player is skipped (advancement handled below)
           skippedPlayers: mirrored?.rank === '8' ? 1 : 0,
-          // A → carry attack target forward
-          attackTarget: mirrored?.rank === 'A' ? turnContext.attackTarget : null,
+          // A → the player who plays the 3 chooses their own target
+          attackTarget: mirrored?.rank === 'A' ? targetId : null,
         };
         break;
       }
@@ -289,9 +289,9 @@ export function applyPlay(
   } else if (rank === 'A' && targetId !== null) {
     const found = state.players.findIndex(p => p.id === targetId);
     rawNext = found !== -1 ? found : (state.currentPlayerIndex + 1) % n;
-  } else if (rank === '3' && turnContext.lastEffectiveCard?.rank === 'A' && turnContext.attackTarget !== null) {
-    // 3 mirrors Ace — redirect turn to the original attack target
-    const found = state.players.findIndex(p => p.id === turnContext.attackTarget);
+  } else if (rank === '3' && turnContext.lastEffectiveCard?.rank === 'A' && targetId !== null) {
+    // 3 mirrors Ace — redirect turn to the target chosen by the 3-player
+    const found = state.players.findIndex(p => p.id === targetId);
     rawNext = found !== -1 ? found : (state.currentPlayerIndex + 1) % n;
   } else {
     // 3 mirroring an 8 propagates the skip (turnContext still holds the pre-play state)

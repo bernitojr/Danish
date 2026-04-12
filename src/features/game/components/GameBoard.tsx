@@ -10,7 +10,7 @@ const EMOTES = ['😊', '😐', '😍', '😵'];
 
 export function GameBoard() {
   const { gameState, isPlayerTurn, playCards, swapCard, setReady, triggerBotTurn,
-    takePile, undoLastMove, stateHistory, sendEmote, resetGame, startGame, difficulty } = useGameStore();
+    takePile, passTurn, undoLastMove, stateHistory, sendEmote, resetGame, startGame, difficulty } = useGameStore();
   const [pendingAce, setPendingAce] = useState<Card | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
@@ -49,10 +49,12 @@ export function GameBoard() {
   const inHiddenMode = human.hand.length === 0 && human.visibleCards.length === 0 && human.hiddenCards.length > 0;
   const cannotPlay = gameStarted && isPlayerTurn && !isPreparing && !pendingAce
     && validMoves.length === 0 && !inHiddenMode;
+  const canPassTurn = cannotPlay && pile.length === 0;
   const pileTop3 = pile.slice(-3);
 
   function handleCardClick(card: Card) {
     if (isPreparing || !isPlayerTurn || pendingAce) return;
+    if (inHiddenMode) { playCards([card]); return; }
     setSelectedCards(prev => prev.some(c => c.id === card.id) ? prev.filter(c => c.id !== card.id)
       : prev.length > 0 && prev[0].rank !== card.rank ? [card] : [...prev, card]);
   }
@@ -62,9 +64,12 @@ export function GameBoard() {
     if (selectedCards.some(c => c.rank === 'A')) {
       setPendingAce(selectedCards.find(c => c.rank === 'A')!); return;
     }
+    if (selectedCards.every(c => c.rank === '3') && turnContext.lastEffectiveCard?.rank === 'A') {
+      setPendingAce(selectedCards[0]); return;
+    }
     if (!playCards(selectedCards)) {
-      const top = pile.at(-1);
-      setInvalidMsg(`Tu ne peux pas jouer ${selectedCards[0].rank} sur ${top?.rank ?? 'vide'}`);
+      const effectiveCard = turnContext.lastEffectiveCard ?? pile.at(-1);
+      setInvalidMsg(`Tu ne peux pas jouer ${selectedCards[0].rank} sur ${effectiveCard?.rank ?? 'vide'}`);
       setTimeout(() => setInvalidMsg(null), 2500);
     } else { addLog(`Tu joues ${selectedCards[0].rank}`); setSelectedCards([]); }
   }
@@ -122,6 +127,7 @@ export function GameBoard() {
             </div>
           </div>
           {cannotPlay && pile.length > 0 && <button className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-sm ring-2 ring-red-400 animate-pulse" onClick={takePile}>Ramasser la pile 📥</button>}
+          {canPassTurn && <button className="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded text-sm ring-2 ring-yellow-400 animate-pulse" onClick={passTurn}>Passer son tour ⏭</button>}
           {invalidMsg && <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">{invalidMsg}</div>}
         </div>
         <BotZone player={bot3} idx={3} />
