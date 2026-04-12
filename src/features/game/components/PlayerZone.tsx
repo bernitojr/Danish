@@ -51,7 +51,7 @@ function FanRow({ cards, isHidden, validMoves, bestMove, selectedIds, onCardClic
 }
 
 export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cannotPlay, validMoves, bestMove, selectedCardIds, onCardClick, onSwap }: PlayerZoneProps) {
-  const [pendingSwap, setPendingSwap] = useState<Card | null>(null);
+  const [pendingSwap, setPendingSwap] = useState<{ card: Card; zone: 'hand' | 'visible' } | null>(null);
   const handEmpty = player.hand.length === 0;
   const visibleEmpty = player.visibleCards.length === 0;
   const hiddenActive = !isPreparing && handEmpty && visibleEmpty;
@@ -61,12 +61,16 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
   const sortedVisible = [...player.visibleCards].sort((a, b) => a.value - b.value);
 
   function handleHandClick(card: Card) {
-    if (isPreparing) { setPendingSwap(prev => (prev?.id === card.id ? null : card)); }
-    else { onCardClick(card); }
+    if (isPreparing) {
+      if (pendingSwap?.zone === 'visible') { onSwap(card, pendingSwap.card); setPendingSwap(null); }
+      else { setPendingSwap(prev => prev?.card.id === card.id ? null : { card, zone: 'hand' }); }
+    } else { onCardClick(card); }
   }
   function handleVisibleClick(card: Card) {
-    if (isPreparing && pendingSwap) { onSwap(pendingSwap, card); setPendingSwap(null); }
-    else if (!isPreparing && handEmpty) { onCardClick(card); }
+    if (isPreparing) {
+      if (pendingSwap?.zone === 'hand') { onSwap(pendingSwap.card, card); setPendingSwap(null); }
+      else { setPendingSwap(prev => prev?.card.id === card.id ? null : { card, zone: 'visible' }); }
+    } else if (!isPreparing && handEmpty) { onCardClick(card); }
   }
 
   const banner = (
@@ -91,7 +95,7 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
           {sortedVisible[i] && (
             <div className="absolute -top-2 left-0">
               <GameCard card={sortedVisible[i]}
-                state={isPreparing && pendingSwap ? 'selected' : !isPreparing && handEmpty ? cardState(sortedVisible[i], validMoves, bestMove, selectedCardIds) : 'normal'}
+                state={isPreparing ? (pendingSwap?.zone === 'hand' ? 'selected' : pendingSwap?.card.id === sortedVisible[i]?.id ? 'chosen' : 'normal') : (!isPreparing && handEmpty ? cardState(sortedVisible[i], validMoves, bestMove, selectedCardIds) : 'normal')}
                 onClick={() => handleVisibleClick(sortedVisible[i])} />
             </div>
           )}
@@ -119,7 +123,7 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1 overflow-visible">
       <div className="flex flex-col items-center gap-0.5">
         <span className="text-white/40 text-[10px] uppercase tracking-wide">Sur la table</span>
         {tableCards}
@@ -130,11 +134,15 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
           <p className="text-blue-300 text-[10px] mt-0.5">Jouez vos cartes visibles</p>
         )}
       </div>
-      <div className={`flex flex-col items-center gap-1 px-3 py-2 bg-black/30 rounded-lg border border-white/10 ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}>
+      <div className={`flex flex-col items-center gap-0.5 px-3 py-1 bg-black/30 rounded-lg border border-white/10 overflow-visible ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}>
         <span className="text-white/40 text-[10px] uppercase tracking-wide">En main</span>
-        <FanRow cards={sortedHand} isHidden={false} validMoves={validMoves} bestMove={bestMove} selectedIds={selectedCardIds} onCardClick={handleHandClick} />
+        <div className="overflow-visible" style={{ transformOrigin: 'center bottom' }}>
+          <FanRow cards={sortedHand} isHidden={false} validMoves={validMoves} bestMove={bestMove} selectedIds={isPreparing && pendingSwap?.zone === 'hand' ? [pendingSwap.card.id] : selectedCardIds} onCardClick={handleHandClick} />
+        </div>
         {isPreparing && pendingSwap && (
-          <p className="text-yellow-300 text-[10px] mt-0.5">Cliquez une carte visible pour échanger</p>
+          <p className="text-yellow-300 text-[10px] mt-0.5">
+            {pendingSwap.zone === 'hand' ? 'Cliquez une carte visible' : 'Cliquez une carte en main'}
+          </p>
         )}
       </div>
       {banner}

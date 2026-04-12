@@ -219,13 +219,16 @@ export function applyPlay(
         break;
       }
 
-      case '6':
+      case '6': {
+        const lastSix = cards[cards.length - 1];
         newContext = {
           ...base,
-          mustFollowSuit: card.suit,
-          mustFollowAboveValue: effectiveVal,
+          lastEffectiveCard: lastSix,
+          mustFollowSuit: lastSix.suit,
+          mustFollowAboveValue: getEffectiveValue(lastSix, config),
         };
         break;
+      }
 
       case '7':
         newContext = { ...base, mustPlayBelow7: true };
@@ -285,6 +288,10 @@ export function applyPlay(
     rawNext = state.currentPlayerIndex;
   } else if (rank === 'A' && targetId !== null) {
     const found = state.players.findIndex(p => p.id === targetId);
+    rawNext = found !== -1 ? found : (state.currentPlayerIndex + 1) % n;
+  } else if (rank === '3' && turnContext.lastEffectiveCard?.rank === 'A' && turnContext.attackTarget !== null) {
+    // 3 mirrors Ace — redirect turn to the original attack target
+    const found = state.players.findIndex(p => p.id === turnContext.attackTarget);
     rawNext = found !== -1 ? found : (state.currentPlayerIndex + 1) % n;
   } else {
     // 3 mirroring an 8 propagates the skip (turnContext still holds the pre-play state)

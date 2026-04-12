@@ -301,7 +301,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (botCards.length === 0) { botTakePile('cannot play'); return; }
 
     // Safety: confirm the chosen play is still valid (guards async race conditions)
-    if (!isValidPlay(botCards, gs)) { botTakePile('invalid move from getBotMove'); return; }
+    if (!isValidPlay(botCards, gs)) {
+      const isBotHiddenPlay = bot.hand.length === 0 && bot.visibleCards.length === 0;
+      if (isBotHiddenPlay) {
+        // Invalid hidden card: move it to hand, then take the pile
+        const updatedBot: Player = {
+          ...bot,
+          hiddenCards: bot.hiddenCards.filter(c => !botCards.some(b => b.id === c.id)),
+          hand: [...botCards, ...gs.pile],
+        };
+        const newPlayers = gs.players.map((p, i) => i === gs.currentPlayerIndex ? updatedBot : p);
+        const nextIndex = nextNonFinished(newPlayers, gs.currentPlayerIndex);
+        console.log(`[${bot.name}] invalid hidden card — takes the pile (${gs.pile.length} cards)`);
+        const next = withDerivedFields({ ...gs, players: newPlayers, pile: [], turnContext: CLEARED_CONTEXT, currentPlayerIndex: nextIndex });
+        set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
+      } else {
+        botTakePile('invalid move from getBotMove');
+      }
+      return;
+    }
 
     // For Ace: target the opponent with the fewest remaining cards
     let targetId: string | null = null;

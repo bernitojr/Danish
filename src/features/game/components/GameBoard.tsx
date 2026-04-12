@@ -7,7 +7,6 @@ import { EndScreen } from './EndScreen';
 import type { Card, Player } from '@/features/game/utils/types';
 
 const EMOTES = ['😊', '😐', '😍', '😵'];
-const CHAT = ['Bien joué !', 'Oups...', 'Sérieux ?!', 'Trop drôle'];
 
 export function GameBoard() {
   const { gameState, isPlayerTurn, playCards, swapCard, setReady, triggerBotTurn,
@@ -47,8 +46,9 @@ export function GameBoard() {
   const { players, pile, deck, currentPlayerIndex, validMoves, bestMove, phase, finishOrder, turnContext } = gameState;
   const [human, bot1, bot2, bot3] = players;
   const isPreparing = phase === 'PREPARATION';
+  const inHiddenMode = human.hand.length === 0 && human.visibleCards.length === 0 && human.hiddenCards.length > 0;
   const cannotPlay = gameStarted && isPlayerTurn && !isPreparing && !pendingAce
-    && validMoves.length === 0 && human.hiddenCards.length === 0;
+    && validMoves.length === 0 && !inHiddenMode;
   const pileTop3 = pile.slice(-3);
 
   function handleCardClick(card: Card) {
@@ -59,7 +59,7 @@ export function GameBoard() {
 
   function handlePileClick() {
     if (!selectedCards.length || pendingAce) return;
-    if (selectedCards.some(c => c.rank === 'A') && !turnContext.mustPlayDouble) {
+    if (selectedCards.some(c => c.rank === 'A')) {
       setPendingAce(selectedCards.find(c => c.rank === 'A')!); return;
     }
     if (!playCards(selectedCards)) {
@@ -89,26 +89,22 @@ export function GameBoard() {
   const pileRing = selectedCards.length > 0 && !pendingAce ? 'ring-2 ring-blue-400 animate-pulse' : '';
 
   return (
-    <div className="relative min-h-screen bg-green-900 flex items-center justify-center p-4">
+    <div className="relative h-screen overflow-hidden bg-green-900 flex flex-col">
       {finishOrder.includes('human') && showEnd && <EndScreen players={players} finishOrder={finishOrder}
         humanId="human" onHide={() => setShowEnd(false)} onReplay={() => { resetGame(); startGame(human?.name ?? 'Joueur', difficulty); }} />}
       {stateHistory.length > 0 && phase === 'PLAYING' && (
-        <button onClick={undoLastMove} className="absolute top-2 right-2 px-3 py-1 bg-black/40 hover:bg-black/60 text-white/70 text-xs rounded border border-white/20">↩ Retour</button>
+        <button onClick={undoLastMove} className="absolute top-2 right-2 px-3 py-1 bg-black/40 hover:bg-black/60 text-white/70 text-xs rounded border border-white/20 z-30">↩ Retour</button>
       )}
-      <div className="fixed left-2 top-1/2 -translate-y-1/2 flex flex-col gap-3 bg-black/40 rounded-xl p-2 z-40">
-        {EMOTES.map(e => <button key={e} className="text-2xl hover:scale-110 transition-transform" onClick={() => sendEmote('human', e)}>{e}</button>)}
-        <div className="w-px h-4 bg-white/20 mx-auto" />
-        {CHAT.map(msg => <button key={msg} className="text-white/70 text-[10px] hover:text-white text-left leading-tight max-w-[48px]" onClick={() => sendEmote('human', msg)}>{msg}</button>)}
+
+      {/* ── Row 1 : Bot top — 36vh fixed ── */}
+      <div className="flex-none flex items-end justify-center pt-16 pb-2" style={{ height: '36vh' }}>
+        <BotZone player={bot2} idx={2} />
       </div>
-      {gameLog.length > 0 && (
-        <div className="fixed bottom-4 right-4 flex flex-col gap-1 z-40 max-w-[180px]">
-          {gameLog.map((entry, i) => <div key={i} className={`px-2 py-1 rounded text-xs ${i === 0 ? 'bg-black/70 text-white' : 'bg-black/40 text-white/50'}`}>{entry}</div>)}
-        </div>
-      )}
-      <div className="grid grid-cols-3 grid-rows-3 gap-4 w-full max-w-3xl">
-        <div /><div><BotZone player={bot2} idx={2} /></div><div />
-        <div><BotZone player={bot1} idx={1} /></div>
-        <div className="flex flex-col items-center gap-3">
+
+      {/* ── Row 2 : Centre — compressible, min 14vh ── */}
+      <div className="flex items-center justify-center gap-12" style={{ minHeight: '14vh', flex: '1 1 0%' }}>
+        <BotZone player={bot1} idx={1} />
+        <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-center gap-1">
               <span className="text-white/60 text-xs">Pile ({pile.length})</span>
@@ -128,9 +124,12 @@ export function GameBoard() {
           {cannotPlay && pile.length > 0 && <button className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-sm ring-2 ring-red-400 animate-pulse" onClick={takePile}>Ramasser la pile 📥</button>}
           {invalidMsg && <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">{invalidMsg}</div>}
         </div>
-        <div><BotZone player={bot3} idx={3} /></div>
-        <div />
-        <div className="relative flex flex-col items-center gap-2">
+        <BotZone player={bot3} idx={3} />
+      </div>
+
+      {/* ── Row 3 : Human player zone — shrink-wraps content, no fixed height ── */}
+      <div className="flex-none flex flex-col items-center justify-start pt-2 overflow-visible">
+        <div className="relative flex flex-col items-center gap-2 overflow-visible">
           <Bubble id="human" />
           <PlayerZone player={human} isCurrentPlayer={currentPlayerIndex === 0} isHuman={true}
             isPreparing={isPreparing} cannotPlay={cannotPlay} validMoves={pendingAce ? [] : validMoves}
@@ -139,7 +138,26 @@ export function GameBoard() {
           {isPreparing && <div className="px-4 py-3 bg-black/50 rounded-lg border border-yellow-500/40 flex flex-col items-center gap-2"><p className="text-yellow-300 text-sm font-medium">Phase de préparation — échangez vos cartes</p><button className="px-5 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded text-sm" onClick={setReady}>Je suis prêt ✓</button></div>}
           {pendingAce && <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3"><span className="text-red-300 text-sm font-medium">Choisissez un joueur à attaquer</span><button className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded" onClick={() => setPendingAce(null)}>Annuler</button></div>}
         </div>
-        <div />
+      </div>
+
+      {/* ── Row 4 : Bottom bar (emotes left · log right) — 10vh fixed ── */}
+      <div className="flex-none flex items-end justify-between px-4 pb-3" style={{ height: '10vh' }}>
+        {/* Emotes — 2×2 grid, emoji only */}
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1.5">
+          {EMOTES.map(e => (
+            <button key={e} className="flex items-center justify-center w-12 h-12 rounded-md hover:bg-white/10 transition-colors"
+              onClick={() => sendEmote('human', e)}>
+              <span className="text-[36px] leading-none">{e}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Game log — bottom-right */}
+        <div className="flex flex-col gap-1.5" style={{ width: 300 }}>
+          {gameLog.slice(0, 4).map((entry, i) => (
+            <div key={i} className={`px-3 py-2 rounded-lg text-base ${i === 0 ? 'bg-black/70 text-white' : 'bg-black/40 text-white/60'}`}>{entry}</div>
+          ))}
+        </div>
       </div>
     </div>
   );
