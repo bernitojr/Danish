@@ -13,6 +13,7 @@ export function GameBoard() {
     takePile, passTurn, undoLastMove, stateHistory, sendEmote, resetGame, startGame, difficulty } = useGameStore();
   const [pendingAce, setPendingAce] = useState<Card | null>(null);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
+  const [hiddenPending, setHiddenPending] = useState<Card | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [bubbles, setBubbles] = useState<Record<string, string>>({});
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export function GameBoard() {
     return () => clearTimeout(t);
   }, [gameState, isPlayerTurn, triggerBotTurn]);
 
-  useEffect(() => { if (!isPlayerTurn) { setPendingAce(null); setSelectedCards([]); } }, [isPlayerTurn]);
+  useEffect(() => { if (!isPlayerTurn) { setPendingAce(null); setSelectedCards([]); setHiddenPending(null); } }, [isPlayerTurn]);
   useEffect(() => {
     if (gameState?.phase !== 'PLAYING') { setGameStarted(false); return; }
     const t = setTimeout(() => setGameStarted(true), 500);
@@ -54,12 +55,22 @@ export function GameBoard() {
 
   function handleCardClick(card: Card) {
     if (isPreparing || !isPlayerTurn || pendingAce) return;
-    if (inHiddenMode) { playCards([card]); return; }
+    if (inHiddenMode) {
+      setHiddenPending(card);
+      return;
+    }
     setSelectedCards(prev => prev.some(c => c.id === card.id) ? prev.filter(c => c.id !== card.id)
       : prev.length > 0 && prev[0].rank !== card.rank ? [card] : [...prev, card]);
   }
 
   function handlePileClick() {
+    if (inHiddenMode) {
+      if (!hiddenPending) return;
+      if (hiddenPending.rank === 'A') {
+        setSelectedCards([hiddenPending]); setPendingAce(hiddenPending); setHiddenPending(null); return;
+      }
+      playCards([hiddenPending]); setHiddenPending(null); return;
+    }
     if (!selectedCards.length || pendingAce) return;
     if (selectedCards.some(c => c.rank === 'A')) {
       setPendingAce(selectedCards.find(c => c.rank === 'A')!); return;
@@ -91,7 +102,7 @@ export function GameBoard() {
     );
   }
 
-  const pileRing = selectedCards.length > 0 && !pendingAce ? 'ring-2 ring-blue-400 animate-pulse' : '';
+  const pileRing = (selectedCards.length > 0 || hiddenPending) && !pendingAce ? 'ring-2 ring-blue-400 animate-pulse' : '';
 
   return (
     <div className="relative h-screen overflow-hidden bg-green-900 flex flex-col">
