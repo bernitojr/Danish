@@ -336,41 +336,52 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
     };
 
+    // Reveal the given hidden cards face-up on the pile, pause 700ms so the
+    // user sees them, then sweep the whole pile (including the revealed card)
+    // into the bot's hand. Mirrors the human invalid-hidden path in playCards.
+    const botRevealHiddenAndSweep = (cardsToReveal: Card[]) => {
+      const revealedBot: Player = {
+        ...bot,
+        hiddenCards: bot.hiddenCards.filter(c => !cardsToReveal.some(r => r.id === c.id)),
+      };
+      const playersAfterReveal = gs.players.map((p, i) => i === gs.currentPlayerIndex ? revealedBot : p);
+      const action = `${bot.name} joue ${formatCardsForLog(cardsToReveal)} — Oups ! prend la pile`;
+      console.log(`[${bot.name}] invalid hidden card — reveals on pile then takes (${gs.pile.length + cardsToReveal.length} cards)`);
+      const reveal: GameState = {
+        ...gs,
+        players: playersAfterReveal,
+        pile: [...gs.pile, ...cardsToReveal],
+        log: appendLogAction(gs.log, action, gs.currentPlayerIndex),
+      };
+      set({ gameState: reveal, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(reveal) });
+      const botIdx = gs.currentPlayerIndex;
+      window.setTimeout(() => {
+        const cur = get().gameState;
+        if (!cur) return;
+        const swept = sweepPileIntoHand(cur, botIdx);
+        set({ gameState: swept, isPlayerTurn: deriveIsPlayerTurn(swept) });
+      }, 700);
+    };
+
+    const isBotHiddenMode =
+      bot.hand.length === 0 && bot.visibleCards.length === 0 && bot.hiddenCards.length > 0;
+
     const botCards = getBotMove(bot, gs, difficulty);
-    if (botCards.length === 0) { botTakePile('cannot play'); return; }
+
+    // getBotMove returns [] when no valid play exists. In hidden mode this
+    // means every hidden card would fail isValidPlay — but Danish rules still
+    // require a blind reveal, so pick one hidden card and run it through the
+    // same reveal+sweep as an explicitly invalid play.
+    if (botCards.length === 0) {
+      if (isBotHiddenMode) botRevealHiddenAndSweep([bot.hiddenCards[0]]);
+      else botTakePile('cannot play');
+      return;
+    }
 
     // Safety: confirm the chosen play is still valid (guards async race conditions)
     if (!isValidPlay(botCards, gs)) {
-      const isBotHiddenPlay = bot.hand.length === 0 && bot.visibleCards.length === 0;
-      if (isBotHiddenPlay) {
-        // Invalid hidden card: reveal it on the pile, pause 700ms so the user
-        // can see the face-up card, then sweep the pile (including the
-        // revealed card) into the bot's hand. Mirrors the Ace hidden-reveal
-        // delay in GameBoard.tsx.
-        const revealedBot: Player = {
-          ...bot,
-          hiddenCards: bot.hiddenCards.filter(c => !botCards.some(b => b.id === c.id)),
-        };
-        const playersAfterReveal = gs.players.map((p, i) => i === gs.currentPlayerIndex ? revealedBot : p);
-        const action = `${bot.name} joue ${formatCardsForLog(botCards)} — Oups ! prend la pile`;
-        console.log(`[${bot.name}] invalid hidden card — reveals on pile then takes (${gs.pile.length + botCards.length} cards)`);
-        const reveal: GameState = {
-          ...gs,
-          players: playersAfterReveal,
-          pile: [...gs.pile, ...botCards],
-          log: appendLogAction(gs.log, action, gs.currentPlayerIndex),
-        };
-        set({ gameState: reveal, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(reveal) });
-        const botIdx = gs.currentPlayerIndex;
-        window.setTimeout(() => {
-          const cur = get().gameState;
-          if (!cur) return;
-          const swept = sweepPileIntoHand(cur, botIdx);
-          set({ gameState: swept, isPlayerTurn: deriveIsPlayerTurn(swept) });
-        }, 700);
-      } else {
-        botTakePile('invalid move from getBotMove');
-      }
+      if (isBotHiddenMode) botRevealHiddenAndSweep(botCards);
+      else botTakePile('invalid move from getBotMove');
       return;
     }
 
