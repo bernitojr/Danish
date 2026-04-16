@@ -315,44 +315,48 @@ export function GameBoard() {
             isPreparing={isPreparing} cannotPlay={cannotPlay} validMoves={pendingAce ? [] : validMoves}
             bestMove={pendingAce ? null : bestMove} selectedCardIds={selectedCards.map(c => c.id)}
             onCardClick={handleCardClick} onSwap={swapCard} isDebugMode={isDebugMode} />
+          {pendingAce && <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3"><span className="text-red-300 text-sm font-medium">Choisissez un joueur à attaquer</span><button className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded" onClick={() => setPendingAce(null)}>Annuler</button></div>}
+        </div>
+      </div>
+
+      {/* ── Row 4 : Bottom bar — prep panel left · emotes + log right ── */}
+      <div className="flex-none flex items-end justify-between px-4 pb-3" style={{ height: '10vh' }}>
+        {/* Prep panel — bottom-left, visible only during PREPARATION */}
+        <div className="flex items-end ml-[30vw] mb-[15vh]" style={{ width: 220 }}>
           {isPreparing && (
-            <div className="px-4 py-3 bg-black/50 rounded-lg border border-yellow-500/40 flex flex-col items-center gap-2">
-              <p className="text-yellow-300 text-sm font-medium">Phase de préparation — échangez vos cartes</p>
-              <div className="flex flex-col gap-1 items-start">
-                <label className="flex items-center gap-2 text-white text-sm cursor-pointer">
+            <div className="w-full px-3 py-2 bg-black/50 rounded-lg border border-yellow-500/40 flex flex-col items-stretch gap-1.5">
+              <p className="text-yellow-300 text-xs font-medium">Phase de préparation</p>
+              <div className="flex flex-col gap-0.5">
+                <label className="flex items-center gap-2 text-white text-xs cursor-pointer">
                   <input type="radio" name="rules-mode" value="patriarchal"
                     checked={gameState.config.mode === 'patriarchal'}
                     onChange={() => setRulesMode('patriarchal')} />
                   <span>Patriarcal</span>
                 </label>
-                <label className="flex items-center gap-2 text-white text-sm cursor-pointer">
+                <label className="flex items-center gap-2 text-white text-xs cursor-pointer">
                   <input type="radio" name="rules-mode" value="matriarchal"
                     checked={gameState.config.mode === 'matriarchal'}
                     onChange={() => setRulesMode('matriarchal')} />
                   <span>Matriarcal</span>
                 </label>
               </div>
-              <button className="px-5 py-1.5 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded text-sm" onClick={setReady}>Je suis prêt ✓</button>
+              <button className="w-full px-3 py-1 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded text-xs" onClick={setReady}>Je suis prêt ✓</button>
             </div>
           )}
-          {pendingAce && <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3"><span className="text-red-300 text-sm font-medium">Choisissez un joueur à attaquer</span><button className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded" onClick={() => setPendingAce(null)}>Annuler</button></div>}
-        </div>
-      </div>
-
-      {/* ── Row 4 : Bottom bar (emotes left · log right) — 10vh fixed ── */}
-      <div className="flex-none flex items-end justify-between px-4 pb-3" style={{ height: '10vh' }}>
-        {/* Emotes — 2×2 grid, emoji only */}
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1.5">
-          {EMOTES.map(e => (
-            <button key={e} className="flex items-center justify-center w-12 h-12 rounded-md hover:bg-white/10 transition-colors"
-              onClick={() => sendEmote('human', e)}>
-              <span className="text-[36px] leading-none">{e}</span>
-            </button>
-          ))}
         </div>
 
-        {/* Structured turn log — bottom-right */}
-        <LogPanel log={gameState.log ?? []} />
+        {/* Emotes + log — bottom-right */}
+        <div className="flex items-end gap-2">
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1.5">
+            {EMOTES.map(e => (
+              <button key={e} className="flex items-center justify-center w-12 h-12 rounded-md hover:bg-white/10 transition-colors"
+                onClick={() => sendEmote('human', e)}>
+                <span className="text-[36px] leading-none">{e}</span>
+              </button>
+            ))}
+          </div>
+          <LogPanel log={gameState.log ?? []} />
+        </div>
       </div>
     </div>
   );
