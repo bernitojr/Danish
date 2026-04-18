@@ -36,9 +36,15 @@ if (cleanPath === '/debug' && DebugPage) return <Suspense fallback={null}><Debug
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <h1 className="text-4xl font-bold">Danish 🃏</h1>
-        <a href={import.meta.env.BASE_URL + 'game'} className="px-6 py-2 bg-green-700 hover:bg-green-600 rounded text-white font-semibold">
-          Play
-        </a>
+    <button
+  onClick={() => {
+    history.pushState({}, '', import.meta.env.BASE_URL + 'game');
+    setPath(import.meta.env.BASE_URL + 'game');
+  }}
+  className="px-6 py-2 bg-green-700 hover:bg-green-600 rounded text-white font-semibold"
+>
+  Play
+</button>
       </div>
     </div>
   );
