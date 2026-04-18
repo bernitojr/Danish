@@ -24,15 +24,19 @@ function App() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
-  if (path === '/game') return <GameRoute />;
-  if (path === '/profile') return <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4"><MemberCard /></div>;
-  if (path === '/debug' && DebugPage) return <Suspense fallback={null}><DebugPage /></Suspense>;
+
+  const base = import.meta.env.BASE_URL // sera '/Danish/' en prod, '/' en dev
+const cleanPath = path.replace(base.replace(/\/$/, ''), '') || '/'
+
+if (cleanPath === '/game') return <GameRoute />;
+if (cleanPath === '/profile') return <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4"><MemberCard /></div>;
+if (cleanPath === '/debug' && DebugPage) return <Suspense fallback={null}><DebugPage /></Suspense>;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <h1 className="text-4xl font-bold">Danish 🃏</h1>
-        <a href="/game" className="px-6 py-2 bg-green-700 hover:bg-green-600 rounded text-white font-semibold">
+        <a href={import.meta.env.BASE_URL + 'game'} className="px-6 py-2 bg-green-700 hover:bg-green-600 rounded text-white font-semibold">
           Play
         </a>
       </div>
