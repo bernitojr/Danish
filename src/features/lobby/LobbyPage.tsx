@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useGameStore } from '@/features/game/store/gameStore';
 import type { BotDifficulty } from '@/features/game/utils/types';
 
@@ -35,7 +35,6 @@ interface LobbyPageProps {
 export function LobbyPage({ onNavigate }: LobbyPageProps) {
   const { setDifficulty } = useGameStore();
   const [diffIndex, setDiffIndex] = useState(1);
-  const [heroVisible, setHeroVisible] = useState(true);
 
   const currentDiff = DIFFICULTY_LEVELS[diffIndex]!;
 
@@ -48,65 +47,43 @@ export function LobbyPage({ onNavigate }: LobbyPageProps) {
     <div className="min-h-screen text-white">
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
-        <AnimatePresence>
-          {heroVisible && (
-            <motion.div
-              key="hero-content"
-              className="flex flex-col items-center gap-6 px-4 text-center"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8 }}
-              >
-                <img
-                  src="./public/logoBC-sansTexte.png"
-                  alt="DWC Logo"
-                  style={{ width: 180, height: 180, objectFit: 'contain' }}
-                />
-              </motion.div>
-              <motion.h1
-                className="font-black text-3xl md:text-5xl text-white drop-shadow-lg max-w-xl"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.7 }}
-              >
-                Bienvenue sur le site officiel du Danish World Championship
-              </motion.h1>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="flex flex-col items-center gap-6 px-4 text-center">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              width: '500px',
+              height: '500px',
+              objectFit: 'contain',
 
-        <HeroTimer onFade={() => setHeroVisible(false)} />
-
-        {!heroVisible && (
-          <motion.div
-            className="absolute bottom-8 flex flex-col items-center gap-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6 }}
+            }}
           >
-            <motion.svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              animate={{ y: [0, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
-            >
-              <path d="M12 5v14M5 12l7 7 7-7" />
-            </motion.svg>
-            <span className="text-white/70 text-sm">Scroll</span>
-          </motion.div>
-        )}
+            <source src="./DWC_V4.webm" type="video/webm" />
+          </video>
+          <h1 className="font-black text-3xl md:text-5xl text-white drop-shadow-lg max-w-xl">
+            Bienvenue sur le site officiel du Danish World Championship
+          </h1>
+        </div>
+
+        <div className="absolute bottom-8 flex flex-col items-center gap-1">
+          <motion.svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="white"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+          >
+            <path d="M12 5v14M5 12l7 7 7-7" />
+          </motion.svg>
+          <span className="text-white/70 text-sm">Scroll</span>
+        </div>
       </section>
 
       {/* ── Cards ──────────────────────────────────────────────── */}
@@ -231,14 +208,4 @@ function LobbyCard({
       {children}
     </div>
   );
-}
-
-function HeroTimer({ onFade }: { onFade: () => void }) {
-  const onFadeRef = useRef(onFade);
-  onFadeRef.current = onFade;
-  useEffect(() => {
-    const t = setTimeout(() => onFadeRef.current(), 3500);
-    return () => clearTimeout(t);
-  }, []);
-  return null;
 }
