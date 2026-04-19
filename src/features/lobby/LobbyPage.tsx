@@ -47,7 +47,7 @@ export function LobbyPage({ onNavigate }: LobbyPageProps) {
     <div className="min-h-screen text-white">
       {/* ── Hero ───────────────────────────────────────────────── */}
       <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
-        <div className="flex flex-col items-center gap-6 px-4 text-center">
+        <div className="flex flex-col items-center gap-2 px-4 text-center">
           <video
             autoPlay
             loop
@@ -67,23 +67,6 @@ export function LobbyPage({ onNavigate }: LobbyPageProps) {
           </h1>
         </div>
 
-        <div className="absolute bottom-8 flex flex-col items-center gap-1">
-          <motion.svg
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
-          >
-            <path d="M12 5v14M5 12l7 7 7-7" />
-          </motion.svg>
-          <span className="text-white/70 text-sm">Scroll</span>
-        </div>
       </section>
 
       {/* ── Cards ──────────────────────────────────────────────── */}

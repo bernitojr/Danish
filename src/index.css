@@ -8,8 +8,8 @@
   --font-title: 'Fraunces', serif;
   --font-body: 'Montserrat', sans-serif;
 
-  --color-primary-mauve: #581c87;
-  --color-primary-orange: #ea580c;
+  --color-primary-mauve: hsl(281, 95%, 44%);
+  --color-primary-orange: hsl(37, 100%, 57%);
   --color-card-rules: #166534;
   --color-card-play-easy: #fca5a5;
   --color-card-play-medium: #dc2626;
