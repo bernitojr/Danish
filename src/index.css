@@ -1,3 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-title: 'Fraunces', serif;
+  --font-body: 'Montserrat', sans-serif;
+
+  --color-primary-mauve: #581c87;
+  --color-primary-orange: #ea580c;
+  --color-card-rules: #166534;
+  --color-card-play-easy: #fca5a5;
+  --color-card-play-medium: #dc2626;
+  --color-card-play-hard: #7f1d1d;
+  --color-card-who: #c2410c;
+  --color-card-profil: #1e40af;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, var(--color-primary-mauve), var(--color-primary-orange));
+  background-attachment: fixed;
+  background-size: 100% 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+}
+
+body, p, span, button, input, label {
+  font-family: var(--font-body);
+}
