@@ -1,5 +1,6 @@
 import { Play, ArrowRight } from 'lucide-react';
 import videoDwc from '../../../assets/DWC_V4.webm';
+import videoDwcMp4 from '../../../assets/DWC_V4.mp4';
 
 export function Hero() {
   return (
@@ -97,8 +98,11 @@ export function Hero() {
                 muted
                 playsInline
                 className="relative z-10 w-[85%] h-[85%] object-contain"
+                  style={{ background: 'transparent' }}
               >
                 <source src={videoDwc} type="video/webm" />
+                <source src={videoDwcMp4} type="video/mp4" />
+                
               </video>
             </div>
           </div>
