@@ -4,7 +4,7 @@ import { useGameStore } from '../game/store/gameStore';
 import { Nav } from './components/Nav';
 import { Hero } from './components/Hero';
 import { QuickAccessCards } from './components/QuickAccessCard';
-export function LandingPage({ onNavigate }:LandingPageProps) {
+export function LandingPage({ onNavigate }: { onNavigate: (path: string) => void }) {
       const store = useGameStore();
     console.log('Game store state on landing page:', store);
   
