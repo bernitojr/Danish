@@ -100,8 +100,8 @@ export function Hero() {
                 className="relative z-10 w-[85%] h-[85%] object-contain"
                   style={{ background: 'transparent' }}
               >
-                <source src={videoDwc} type="video/webm" />
-                <source src={videoDwcMp4} type="video/mp4" />
+          <source src={videoDwcMp4} type='video/mp4; codecs="hvc1"' />
+  <source src={videoDwc} type="video/webm" />
                 
               </video>
             </div>
