@@ -1,6 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { GameBoard } from '@/features/game/components/GameBoard';
-import { MemberCard } from '@/features/game/components/MemberCard';
+import { GameBoard } from '@/features/game/components/GameBoard'; 
 import { LandingPage } from '@/features/landing/LandingPage';
 import { useGameStore } from '@/features/game/store/gameStore';
 import { supabase } from '@/lib/supabase';
