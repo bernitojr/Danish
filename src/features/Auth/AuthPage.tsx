@@ -56,7 +56,10 @@ export function AuthPage() {
     rounded-[calc(var(--radius)*2)]
     p-10 pt-12 pb-8
     shadow-[0_0_0_1px_hsl(var(--primary)/0.06),0_24px_64px_hsl(0_0%_0%/0.6),0_4px_16px_hsl(0_0%_0%/0.35)]
-    flex flex-col gap-[1.6rem]"
+    flex flex-col gap-[1.6rem]
+    border-t-2 border-t-[hsl(var(--primary))]
+
+    card-container"
         data-mode={mode}
       >
         {/* header du form */}
@@ -139,12 +142,7 @@ export function AuthPage() {
           </button>
           <button
             onClick={() => setMode('signup')}
-            className={`relative z-[2] py-[0.55rem] text-[0.78rem] font-semibold transition-colors duration-200
-    ${
-      mode === 'signup'
-        ? 'text-[hsl(var(--accent))]'
-        : 'text-[hsl(var(--foreground-muted))]'
-    }`}
+            className={`relative z-[2] py-[0.55rem] text-[0.78rem] font-semibold transition-colors duration-200`}
           >
             S'inscrire
           </button>
