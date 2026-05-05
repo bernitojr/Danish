@@ -53,6 +53,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 [data-mode='signup'] .submit-btn:hover {
   background: hsl(var(--accent) / 0.25);
+  border: 1px solid hsl(var(--accent) / 0.45);
   box-shadow: 0 0 16px hsl(var(--accent) / 0.2);
 }
 
