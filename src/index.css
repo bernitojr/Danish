@@ -21,3 +21,33 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
 }
+
+.blink-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: hsl(var(--accent));
+  animation: blink 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.7); }
+}
+
+/* Thumb toggle */
+[data-mode='signup'] .toggle-thumb {
+  transform: translateX(100%);
+  background: hsl(var(--accent) / 0.16);
+  border-color: hsl(var(--accent) / 0.45);
+  box-shadow: 0 0 12px hsl(var(--accent) / 0.15);
+}
+
+/* Bouton submit */
+[data-mode='signup'] .submit-btn {
+  background: hsl(var(--accent) / 0.14);
+  border-color: hsl(var(--accent) / 0.45);
+  color: hsl(var(--accent));
+}

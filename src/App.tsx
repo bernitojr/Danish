@@ -4,6 +4,7 @@ import { LandingPage } from '@/features/landing/LandingPage';
 import { useGameStore } from '@/features/game/store/gameStore';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { AuthPage } from './features/Auth/AuthPage';
 
 const DebugPage = import.meta.env.DEV ? lazy(() => import('@/features/game/components/DebugPage').then(m => ({ default: m.DebugPage }))) : null;
 
@@ -59,10 +60,11 @@ function App() {
   const cleanPath = path.replace(base.replace(/\/$/, ''), '') || '/';
 
   if (cleanPath === '/game') return <GameRoute />;
+  if (cleanPath === '/auth') return <AuthPage />;
   if (cleanPath === '/profile') {
     if(isLoading) return <div>Chargement...</div>
     if(!user) {
-      navigate('/');  
+      navigate('/auth');  
       return null;
     }
     return <ProfilePage />;
