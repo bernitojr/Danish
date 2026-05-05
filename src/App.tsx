@@ -5,6 +5,7 @@ import { useGameStore } from '@/features/game/store/gameStore'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { AuthPage } from './features/Auth/AuthPage'
+import { useTheme } from './features/landing/hooks/useTheme'
 
 const DebugPage = import.meta.env.DEV
   ? lazy(() =>
@@ -25,6 +26,7 @@ function GameRoute() {
 }
 
 function App() {
+  useTheme()
   const [path, setPath] = useState(window.location.pathname)
 
   const { setUser, setProfile, setIsLoading, isLoading, user } = useAuthStore()

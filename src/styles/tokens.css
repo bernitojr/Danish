@@ -33,6 +33,13 @@
 /* glow autour du logo */
 --glow-primary: 230 53% 64% / 0.3;
 --glow-accent: 153 80% 57% / 0.15;
+
+/* couleurs sémantiques  */
+--success : 134 61% 41%;
+--warning: 38 92% 50%;
+--delete: 0 80% 45%;
+--info: 211 80% 54%;
+
 }
 
 /* ── Mode light: on override seulement les sémantiques ── */

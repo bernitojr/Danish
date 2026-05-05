@@ -61,5 +61,12 @@ export function useAuth() {
     setProfile({ username, avatar_url: null })
   }
 
-  return { signIn, signUp }
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+    console.log('User signed out')
+  }
+
+  return { signIn, signUp, signOut }
 }

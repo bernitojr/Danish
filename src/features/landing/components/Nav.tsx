@@ -1,18 +1,26 @@
-import { useState } from 'react';
-import { Menu } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { MobileDrawer } from './MobileDrawer';
-import logoDwc from '@/assets/logo-DWCV1.png';
+import { useState } from 'react'
+import { Menu } from 'lucide-react'
+import { ThemeToggle } from './ThemeToggle'
+import { MobileDrawer } from './MobileDrawer'
+import { useAuthStore } from '@/stores/useAuthStore'
+import logoDwc from '@/assets/logo-DWCV1.png'
+import { useAuth } from '@/hooks/useAuth'
 
 const NAV_LINKS = [
   { label: 'Règles', href: '#' },
   { label: 'Jouer', href: '#' },
   { label: 'Classement', href: '#' },
   { label: 'Profil', href: '#' },
-];
+]
 
-export function Nav() {
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+interface NavProps {
+  onNavigate: (path: string) => void
+}
+
+export function Nav({ onNavigate }: NavProps) {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const { user } = useAuthStore()
+  const { signOut } = useAuth()
 
   return (
     <>
@@ -67,9 +75,25 @@ export function Nav() {
           {/* ACTIONS DESKTOP — cachées sur mobile */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            <a
-              href="#"
-              className="
+            {user ? (
+              <button
+                onClick={signOut}
+                className="
+                  bg-[hsl(var(--delete))]
+                  text-[hsl(var(--primary-foreground))]
+                text-sm font-semibold
+                px-4 py-2 rounded-md
+                hover:opacity-90
+                transition-opacity
+                no-underline
+              "
+              >
+                Se déconnecter
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigate('/auth')}
+                className="
                 bg-[hsl(var(--primary))]
                 text-[hsl(var(--primary-foreground))]
                 text-sm font-semibold
@@ -78,9 +102,10 @@ export function Nav() {
                 transition-opacity
                 no-underline
               "
-            >
-              Se connecter
-            </a>
+              >
+                Se connecter
+              </button>
+            )}
           </div>
 
           {/* BURGER — visible uniquement sur mobile */}
@@ -108,5 +133,5 @@ export function Nav() {
         links={NAV_LINKS}
       />
     </>
-  );
+  )
 }
