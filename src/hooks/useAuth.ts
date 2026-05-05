@@ -58,7 +58,7 @@ export function useAuth() {
     if (profileError) throw profileError
 
     setUser(data.user)
-    setProfile({ username, avatar_url: null })
+    setProfile({ username, avatar_url: null, role: 'player' })
   }
 
   const signOut = async () => {

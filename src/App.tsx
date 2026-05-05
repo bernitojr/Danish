@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { AuthPage } from './features/Auth/AuthPage'
 import { useTheme } from './features/landing/hooks/useTheme'
+import { ProfilePage } from './features/Auth/ProfilePage'
 
 const DebugPage = import.meta.env.DEV
   ? lazy(() =>
