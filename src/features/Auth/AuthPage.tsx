@@ -3,7 +3,11 @@ import { useAuth } from '@/hooks/useAuth'
 import logoDwc from '@/assets/logo-DWCV1.png'
 import { AlertCircle, User, Lock } from 'lucide-react'
 
-export function AuthPage() {
+interface AuthPageProps {
+  onNavigate: (path: string) => void
+}
+
+export function AuthPage({ onNavigate }: AuthPageProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -26,6 +30,7 @@ export function AuthPage() {
       } else {
         await signUp(username, password)
       }
+      onNavigate('/')
     } catch {
       setError('Identifiants incorrects.')
     } finally {

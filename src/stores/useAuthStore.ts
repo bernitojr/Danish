@@ -1,18 +1,19 @@
-import { create } from "zustand";
-import type { User } from "@supabase/supabase-js";
+import { create } from 'zustand'
+import type { User } from '@supabase/supabase-js'
 
 interface Profile {
-  username: string;
-  avatar_url: string | null;
+  username: string
+  avatar_url: string | null
+  role: string
 }
 
 interface AuthState {
-  user: User | null;
-  profile: Profile | null;
-  isLoading: boolean;
-  setUser: (user: User | null) => void;
-  setProfile: (profile: Profile | null) => void;
-  setIsLoading: (isLoading: boolean) => void;
+  user: User | null
+  profile: Profile | null
+  isLoading: boolean
+  setUser: (user: User | null) => void
+  setProfile: (profile: Profile | null) => void
+  setIsLoading: (isLoading: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -22,4 +23,4 @@ export const useAuthStore = create<AuthState>((set) => ({
   setUser: (user) => set({ user }),
   setProfile: (profile) => set({ profile }),
   setIsLoading: (isLoading) => set({ isLoading }),
-}));
+}))
