@@ -20,6 +20,10 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+      - env: - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY }}
 
       - uses: peaceiris/actions-gh-pages@v3
         with:
