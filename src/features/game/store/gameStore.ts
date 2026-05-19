@@ -1,6 +1,13 @@
-import { create } from 'zustand';
-import type { BotDifficulty, Card, GameState, Player, RulesConfig, TurnContext } from '@/features/game/utils/types';
-import { BOT_PROFILES } from '@/features/game/data/botProfiles';
+import { create } from 'zustand'
+import type {
+  BotDifficulty,
+  Card,
+  GameState,
+  Player,
+  RulesConfig,
+  TurnContext,
+} from '@/features/game/utils/types'
+import { BOT_PROFILES } from '@/features/game/data/botProfiles'
 import {
   initGame,
   isValidPlay,
@@ -9,26 +16,26 @@ import {
   getValidMoves,
   getBestMove,
   appendLogAction,
-} from '@/features/game/utils/cardRules';
+} from '@/features/game/utils/cardRules'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Returns the index of the next non-finished player after `from`. */
 function nextNonFinished(players: Player[], from: number): number {
-  const n = players.length;
-  let idx = (from + 1) % n;
+  const n = players.length
+  let idx = (from + 1) % n
   for (let i = 0; i < n - 1; i++) {
-    if (!players[idx]!.isFinished) return idx;
-    idx = (idx + 1) % n;
+    if (!players[idx]!.isFinished) return idx
+    idx = (idx + 1) % n
   }
-  return idx;
+  return idx
 }
 
 /** True when the player at currentPlayerIndex is human (not a bot). */
 function deriveIsPlayerTurn(gs: GameState | null): boolean {
-  if (!gs) return false;
-  const current = gs.players[gs.currentPlayerIndex];
-  return current !== undefined && !current.isBot;
+  if (!gs) return false
+  const current = gs.players[gs.currentPlayerIndex]
+  return current !== undefined && !current.isBot
 }
 
 function makeHumanPlayer(name: string): Player {
@@ -43,10 +50,10 @@ function makeHumanPlayer(name: string): Player {
     visibleCards: [],
     hiddenCards: [],
     stats: { gamesPlayed: 0, placements: [0, 0, 0, 0], achievements: [] },
-  };
+  }
 }
 
-type BotProfile = typeof BOT_PROFILES[number];
+type BotProfile = (typeof BOT_PROFILES)[number]
 
 function makeBotPlayer(index: number, profile: BotProfile): Player {
   return {
@@ -60,27 +67,28 @@ function makeBotPlayer(index: number, profile: BotProfile): Player {
     visibleCards: [],
     hiddenCards: [],
     stats: { gamesPlayed: 0, placements: [0, 0, 0, 0], achievements: [] },
-  };
+  }
 }
 
 /** Returns `count` distinct bot profiles picked at random from BOT_PROFILES. */
 function pickRandomBotProfiles(count: number): BotProfile[] {
-  return [...BOT_PROFILES]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, count);
+  return [...BOT_PROFILES].sort(() => Math.random() - 0.5).slice(0, count)
 }
 
 /** Total cards remaining for a player across all zones. */
 function totalCards(p: Player): number {
-  return p.hand.length + p.visibleCards.length + p.hiddenCards.length;
+  return p.hand.length + p.visibleCards.length + p.hiddenCards.length
 }
 
 const SUIT_GLYPH: Record<Card['suit'], string> = {
-  hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
-};
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣',
+  spades: '♠',
+}
 
 function formatCardsForLog(cards: Card[]): string {
-  return cards.map(c => `${c.rank}${SUIT_GLYPH[c.suit]}`).join(' ');
+  return cards.map((c) => `${c.rank}${SUIT_GLYPH[c.suit]}`).join(' ')
 }
 
 /**
@@ -90,36 +98,37 @@ function formatCardsForLog(cards: Card[]): string {
  * already been appended to state.pile.
  */
 function sweepPileIntoHand(gs: GameState, playerIdx: number): GameState {
-  const player = gs.players[playerIdx];
-  if (!player) return gs;
-  const sweptPlayer: Player = { ...player, hand: [...player.hand, ...gs.pile] };
-  const newPlayers = gs.players.map((p, i) => (i === playerIdx ? sweptPlayer : p));
-  const nextIndex = nextNonFinished(newPlayers, playerIdx);
+  const player = gs.players[playerIdx]
+  if (!player) return gs
+  const sweptPlayer: Player = { ...player, hand: [...player.hand, ...gs.pile] }
+  const newPlayers = gs.players.map((p, i) =>
+    i === playerIdx ? sweptPlayer : p
+  )
+  const nextIndex = nextNonFinished(newPlayers, playerIdx)
   return withDerivedFields({
     ...gs,
     players: newPlayers,
     pile: [],
     turnContext: CLEARED_CONTEXT,
     currentPlayerIndex: nextIndex,
-  });
+  })
 }
-
 
 /** Push gs onto history (max 10) when in PLAYING phase. */
 function pushHistory(history: GameState[], gs: GameState): GameState[] {
-  if (gs.phase !== 'PLAYING') return history;
-  return [...history, gs].slice(-10);
+  if (gs.phase !== 'PLAYING') return history
+  return [...history, gs].slice(-10)
 }
 
 /** Stamp fresh validMoves / bestMove onto a state before storing it. */
 function withDerivedFields(gs: GameState): GameState {
-  const current = gs.players[gs.currentPlayerIndex];
-  if (!current || gs.phase !== 'PLAYING') return gs;
+  const current = gs.players[gs.currentPlayerIndex]
+  if (!current || gs.phase !== 'PLAYING') return gs
   return {
     ...gs,
     validMoves: getValidMoves(current, gs),
     bestMove: getBestMove(current, gs),
-  };
+  }
 }
 
 // ── Store definition ──────────────────────────────────────────────────────────
@@ -134,28 +143,28 @@ const CLEARED_CONTEXT: TurnContext = {
   lastPlayedValue: null,
   skippedPlayers: 0,
   attackTarget: null,
-};
+}
 
-interface GameStore {
-  gameState: GameState | null;
-  stateHistory: GameState[];
-  difficulty: BotDifficulty;
-  isPlayerTurn: boolean;
-  isDebugMode: boolean;
+export interface GameStore {
+  gameState: GameState | null
+  stateHistory: GameState[]
+  difficulty: BotDifficulty
+  isPlayerTurn: boolean
+  isDebugMode: boolean
 
-  startGame: (playerName: string, difficulty: BotDifficulty) => void;
-  playCards: (cards: Card[], targetId?: string | null) => boolean;
-  swapCard: (handCard: Card, visibleCard: Card) => void;
-  setReady: () => void;
-  triggerBotTurn: () => void;
-  takePile: () => void;
-  undoLastMove: () => void;
-  resetGame: () => void;
-  passTurn: () => void;
-  sendEmote: (playerId: string, emote: string) => void;
-  setDebugMode: (v: boolean) => void;
-  setRulesMode: (mode: RulesConfig['mode']) => void;
-  setDifficulty: (d: BotDifficulty) => void;
+  startGame: (playerName: string, difficulty: BotDifficulty) => void
+  playCards: (cards: Card[], targetId?: string | null) => boolean
+  swapCard: (handCard: Card, visibleCard: Card) => void
+  setReady: () => void
+  triggerBotTurn: () => void
+  takePile: () => void
+  undoLastMove: () => void
+  resetGame: () => void
+  passTurn: () => void
+  sendEmote: (playerId: string, emote: string) => void
+  setDebugMode: (v: boolean) => void
+  setRulesMode: (mode: RulesConfig['mode']) => void
+  setDifficulty: (d: BotDifficulty) => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -176,13 +185,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * The game starts in PREPARATION phase so the human can swap cards.
    */
   startGame: (playerName, difficulty) => {
-    const botProfiles = pickRandomBotProfiles(3);
+    const botProfiles = pickRandomBotProfiles(3)
     const players: Player[] = [
       makeHumanPlayer(playerName),
       ...botProfiles.map((profile, i) => makeBotPlayer(i + 1, profile)),
-    ];
-    const gs = initGame(players, { mode: 'patriarchal' });
-    set({ gameState: gs, difficulty, isPlayerTurn: deriveIsPlayerTurn(gs) });
+    ]
+    const gs = initGame(players, { mode: 'patriarchal' })
+    set({ gameState: gs, difficulty, isPlayerTurn: deriveIsPlayerTurn(gs) })
   },
 
   /**
@@ -196,16 +205,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * @param targetId Player id to attack when an Ace is played; null otherwise.
    */
   playCards: (cards, targetId = null) => {
-    const gs = get().gameState;
-    if (!gs) return false;
+    const gs = get().gameState
+    if (!gs) return false
 
     // Detect hidden card play (hand and visible both empty for current player)
-    const currentPlayer = gs.players[gs.currentPlayerIndex];
+    const currentPlayer = gs.players[gs.currentPlayerIndex]
     const isHiddenPlay =
       currentPlayer !== undefined &&
       currentPlayer.hand.length === 0 &&
       currentPlayer.visibleCards.length === 0 &&
-      cards.every(c => currentPlayer.hiddenCards.some(h => h.id === c.id));
+      cards.every((c) => currentPlayer.hiddenCards.some((h) => h.id === c.id))
 
     if (!isValidPlay(cards, gs)) {
       if (isHiddenPlay && currentPlayer) {
@@ -215,28 +224,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const revealedPlayer: Player = {
           ...currentPlayer,
           hiddenCards: currentPlayer.hiddenCards.filter(
-            c => !cards.some(played => played.id === c.id),
+            (c) => !cards.some((played) => played.id === c.id)
           ),
-        };
+        }
         const playersAfterReveal = gs.players.map((p, i) =>
-          i === gs.currentPlayerIndex ? revealedPlayer : p,
-        );
-        const action = `${currentPlayer.name} joue ${formatCardsForLog(cards)} — Oups ! prend la pile`;
+          i === gs.currentPlayerIndex ? revealedPlayer : p
+        )
+        const action = `${currentPlayer.name} joue ${formatCardsForLog(cards)} — Oups ! prend la pile`
         const reveal: GameState = {
           ...gs,
           players: playersAfterReveal,
           pile: [...gs.pile, ...cards],
           log: appendLogAction(gs.log, action, gs.currentPlayerIndex),
-        };
-        set({ gameState: reveal, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(reveal) });
-        const swept = sweepPileIntoHand(reveal, reveal.currentPlayerIndex);
-        set({ gameState: swept, isPlayerTurn: deriveIsPlayerTurn(swept) });
+        }
+        set({
+          gameState: reveal,
+          stateHistory: pushHistory(get().stateHistory, gs),
+          isPlayerTurn: deriveIsPlayerTurn(reveal),
+        })
+        const swept = sweepPileIntoHand(reveal, reveal.currentPlayerIndex)
+        set({ gameState: swept, isPlayerTurn: deriveIsPlayerTurn(swept) })
       }
-      return false;
+      return false
     }
-    const next = withDerivedFields(applyPlay(cards, targetId ?? null, gs));
-    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
-    return true;
+    const next = withDerivedFields(applyPlay(cards, targetId ?? null, gs))
+    set({
+      gameState: next,
+      stateHistory: pushHistory(get().stateHistory, gs),
+      isPlayerTurn: deriveIsPlayerTurn(next),
+    })
+    return true
   },
 
   /**
@@ -250,24 +267,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * @param visibleCard Card currently face-up to move into the human's hand.
    */
   swapCard: (handCard, visibleCard) => {
-    const gs = get().gameState;
-    if (!gs || gs.phase !== 'PREPARATION') return;
+    const gs = get().gameState
+    if (!gs || gs.phase !== 'PREPARATION') return
 
-    const humanIdx = gs.players.findIndex(p => !p.isBot);
-    if (humanIdx === -1) return;
-    const human = gs.players[humanIdx];
+    const humanIdx = gs.players.findIndex((p) => !p.isBot)
+    if (humanIdx === -1) return
+    const human = gs.players[humanIdx]
 
     // Verify ownership
-    if (!human.hand.some(c => c.id === handCard.id)) return;
-    if (!human.visibleCards.some(c => c.id === visibleCard.id)) return;
+    if (!human.hand.some((c) => c.id === handCard.id)) return
+    if (!human.visibleCards.some((c) => c.id === visibleCard.id)) return
 
-    const newHand = human.hand.map(c => (c.id === handCard.id ? visibleCard : c));
-    const newVisible = human.visibleCards.map(c => (c.id === visibleCard.id ? handCard : c));
+    const newHand = human.hand.map((c) =>
+      c.id === handCard.id ? visibleCard : c
+    )
+    const newVisible = human.visibleCards.map((c) =>
+      c.id === visibleCard.id ? handCard : c
+    )
 
-    const updatedHuman: Player = { ...human, hand: newHand, visibleCards: newVisible };
-    const newPlayers = gs.players.map((p, i) => (i === humanIdx ? updatedHuman : p));
-    const next: GameState = { ...gs, players: newPlayers };
-    set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) });
+    const updatedHuman: Player = {
+      ...human,
+      hand: newHand,
+      visibleCards: newVisible,
+    }
+    const newPlayers = gs.players.map((p, i) =>
+      i === humanIdx ? updatedHuman : p
+    )
+    const next: GameState = { ...gs, players: newPlayers }
+    set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) })
   },
 
   /**
@@ -279,15 +306,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * from PREPARATION to PLAYING.
    */
   setReady: () => {
-    const gs = get().gameState;
-    if (!gs || gs.phase !== 'PREPARATION') return;
+    const gs = get().gameState
+    if (!gs || gs.phase !== 'PREPARATION') return
 
     // Mark human ready; bots are already ready — transition immediately.
-    const newPlayers = gs.players.map(p => (p.isBot ? p : { ...p, isReady: true }));
-    const allReady = newPlayers.every(p => p.isReady);
-    const partial: GameState = { ...gs, players: newPlayers, phase: allReady ? 'PLAYING' : gs.phase };
-    const next = withDerivedFields(partial);
-    set({ gameState: next, stateHistory: [], isPlayerTurn: deriveIsPlayerTurn(next) });
+    const newPlayers = gs.players.map((p) =>
+      p.isBot ? p : { ...p, isReady: true }
+    )
+    const allReady = newPlayers.every((p) => p.isReady)
+    const partial: GameState = {
+      ...gs,
+      players: newPlayers,
+      phase: allReady ? 'PLAYING' : gs.phase,
+    }
+    const next = withDerivedFields(partial)
+    set({
+      gameState: next,
+      stateHistory: [],
+      isPlayerTurn: deriveIsPlayerTurn(next),
+    })
   },
 
   /**
@@ -297,28 +334,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * next player (index + 1, wrapping).
    */
   takePile: () => {
-    const gs = get().gameState;
-    if (!gs || gs.phase !== 'PLAYING') return;
+    const gs = get().gameState
+    if (!gs || gs.phase !== 'PLAYING') return
 
-    const human = gs.players[gs.currentPlayerIndex];
-    if (!human || human.isBot) return;
-    if (getValidMoves(human, gs).length > 0) return; // must have no valid move
+    const human = gs.players[gs.currentPlayerIndex]
+    if (!human || human.isBot) return
+    if (getValidMoves(human, gs).length > 0) return // must have no valid move
 
-    const newHuman: Player = { ...human, hand: [...human.hand, ...gs.pile] };
+    const newHuman: Player = { ...human, hand: [...human.hand, ...gs.pile] }
     const newPlayers = gs.players.map((p, i) =>
-      i === gs.currentPlayerIndex ? newHuman : p,
-    );
-    const nextIndex = nextNonFinished(newPlayers, gs.currentPlayerIndex);
-    console.log(`[${human.name}] cannot play — takes the pile (${gs.pile.length} cards)`);
+      i === gs.currentPlayerIndex ? newHuman : p
+    )
+    const nextIndex = nextNonFinished(newPlayers, gs.currentPlayerIndex)
+    console.log(
+      `[${human.name}] cannot play — takes the pile (${gs.pile.length} cards)`
+    )
     const next = withDerivedFields({
       ...gs,
       players: newPlayers,
       pile: [],
       turnContext: CLEARED_CONTEXT,
       currentPlayerIndex: nextIndex,
-      log: appendLogAction(gs.log, `${human.name} prend la pile`, gs.currentPlayerIndex),
-    });
-    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
+      log: appendLogAction(
+        gs.log,
+        `${human.name} prend la pile`,
+        gs.currentPlayerIndex
+      ),
+    })
+    set({
+      gameState: next,
+      stateHistory: pushHistory(get().stateHistory, gs),
+      isPlayerTurn: deriveIsPlayerTurn(next),
+    })
   },
 
   /**
@@ -333,20 +380,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Does nothing if the current player is human or no valid move is found.
    */
   triggerBotTurn: () => {
-    const { gameState: gs, difficulty } = get();
-    if (!gs) return;
+    const { gameState: gs, difficulty } = get()
+    if (!gs) return
 
-    const bot = gs.players[gs.currentPlayerIndex];
-    if (!bot || !bot.isBot || bot.isFinished) return;
+    const bot = gs.players[gs.currentPlayerIndex]
+    if (!bot || !bot.isBot || bot.isFinished) return
 
     const botTakePile = (reason: string) => {
-      const newBot: Player = { ...bot, hand: [...bot.hand, ...gs.pile] };
-      const newPlayers = gs.players.map((p, i) => i === gs.currentPlayerIndex ? newBot : p);
-      const nextIndex = nextNonFinished(newPlayers, gs.currentPlayerIndex);
-      console.log(`[${bot.name}] ${reason} — takes the pile (${gs.pile.length} cards)`);
-      const next = withDerivedFields({ ...gs, players: newPlayers, pile: [], turnContext: CLEARED_CONTEXT, currentPlayerIndex: nextIndex, log: appendLogAction(gs.log, `${bot.name} prend la pile`, gs.currentPlayerIndex) });
-      set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
-    };
+      const newBot: Player = { ...bot, hand: [...bot.hand, ...gs.pile] }
+      const newPlayers = gs.players.map((p, i) =>
+        i === gs.currentPlayerIndex ? newBot : p
+      )
+      const nextIndex = nextNonFinished(newPlayers, gs.currentPlayerIndex)
+      console.log(
+        `[${bot.name}] ${reason} — takes the pile (${gs.pile.length} cards)`
+      )
+      const next = withDerivedFields({
+        ...gs,
+        players: newPlayers,
+        pile: [],
+        turnContext: CLEARED_CONTEXT,
+        currentPlayerIndex: nextIndex,
+        log: appendLogAction(
+          gs.log,
+          `${bot.name} prend la pile`,
+          gs.currentPlayerIndex
+        ),
+      })
+      set({
+        gameState: next,
+        stateHistory: pushHistory(get().stateHistory, gs),
+        isPlayerTurn: deriveIsPlayerTurn(next),
+      })
+    }
 
     // Reveal the given hidden cards face-up on the pile, pause 700ms so the
     // user sees them, then sweep the whole pile (including the revealed card)
@@ -354,64 +420,86 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const botRevealHiddenAndSweep = (cardsToReveal: Card[]) => {
       const revealedBot: Player = {
         ...bot,
-        hiddenCards: bot.hiddenCards.filter(c => !cardsToReveal.some(r => r.id === c.id)),
-      };
-      const playersAfterReveal = gs.players.map((p, i) => i === gs.currentPlayerIndex ? revealedBot : p);
-      const action = `${bot.name} joue ${formatCardsForLog(cardsToReveal)} — Oups ! prend la pile`;
-      console.log(`[${bot.name}] invalid hidden card — reveals on pile then takes (${gs.pile.length + cardsToReveal.length} cards)`);
+        hiddenCards: bot.hiddenCards.filter(
+          (c) => !cardsToReveal.some((r) => r.id === c.id)
+        ),
+      }
+      const playersAfterReveal = gs.players.map((p, i) =>
+        i === gs.currentPlayerIndex ? revealedBot : p
+      )
+      const action = `${bot.name} joue ${formatCardsForLog(cardsToReveal)} — Oups ! prend la pile`
+      console.log(
+        `[${bot.name}] invalid hidden card — reveals on pile then takes (${gs.pile.length + cardsToReveal.length} cards)`
+      )
       const reveal: GameState = {
         ...gs,
         players: playersAfterReveal,
         pile: [...gs.pile, ...cardsToReveal],
         log: appendLogAction(gs.log, action, gs.currentPlayerIndex),
-      };
-      set({ gameState: reveal, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(reveal) });
-      const botIdx = gs.currentPlayerIndex;
+      }
+      set({
+        gameState: reveal,
+        stateHistory: pushHistory(get().stateHistory, gs),
+        isPlayerTurn: deriveIsPlayerTurn(reveal),
+      })
+      const botIdx = gs.currentPlayerIndex
       window.setTimeout(() => {
-        const cur = get().gameState;
-        if (!cur) return;
-        const swept = sweepPileIntoHand(cur, botIdx);
-        set({ gameState: swept, isPlayerTurn: deriveIsPlayerTurn(swept) });
-      }, 700);
-    };
+        const cur = get().gameState
+        if (!cur) return
+        const swept = sweepPileIntoHand(cur, botIdx)
+        set({ gameState: swept, isPlayerTurn: deriveIsPlayerTurn(swept) })
+      }, 700)
+    }
 
     const isBotHiddenMode =
-      bot.hand.length === 0 && bot.visibleCards.length === 0 && bot.hiddenCards.length > 0;
+      bot.hand.length === 0 &&
+      bot.visibleCards.length === 0 &&
+      bot.hiddenCards.length > 0
 
-    const botCards = getBotMove(bot, gs, difficulty);
+    const botCards = getBotMove(bot, gs, difficulty)
 
     // getBotMove returns [] when no valid play exists. In hidden mode this
     // means every hidden card would fail isValidPlay — but Danish rules still
     // require a blind reveal, so pick one hidden card and run it through the
     // same reveal+sweep as an explicitly invalid play.
     if (botCards.length === 0) {
-      if (isBotHiddenMode) botRevealHiddenAndSweep([bot.hiddenCards[0]]);
-      else botTakePile('cannot play');
-      return;
+      if (isBotHiddenMode) botRevealHiddenAndSweep([bot.hiddenCards[0]])
+      else botTakePile('cannot play')
+      return
     }
 
     // Safety: confirm the chosen play is still valid (guards async race conditions)
     if (!isValidPlay(botCards, gs)) {
-      if (isBotHiddenMode) botRevealHiddenAndSweep(botCards);
-      else botTakePile('invalid move from getBotMove');
-      return;
+      if (isBotHiddenMode) botRevealHiddenAndSweep(botCards)
+      else botTakePile('invalid move from getBotMove')
+      return
     }
 
     // For Ace: target the opponent with the fewest remaining cards
-    let targetId: string | null = null;
+    let targetId: string | null = null
     if (botCards[0].rank === 'A') {
-      const others = gs.players.filter(p => p.id !== bot.id && totalCards(p) > 0);
+      const others = gs.players.filter(
+        (p) => p.id !== bot.id && totalCards(p) > 0
+      )
       if (others.length > 0) {
         targetId = others.reduce((t, p) =>
-          totalCards(p) < totalCards(t) ? p : t,
-        ).id;
+          totalCards(p) < totalCards(t) ? p : t
+        ).id
       }
     }
 
-    const next = withDerivedFields(applyPlay(botCards, targetId, gs));
-    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
-    const BOT_EMOTES = ['😊', '😐', '😍', '😵'];
-    if (Math.random() < 0.2) get().sendEmote(bot.id, BOT_EMOTES[Math.floor(Math.random() * BOT_EMOTES.length)]);
+    const next = withDerivedFields(applyPlay(botCards, targetId, gs))
+    set({
+      gameState: next,
+      stateHistory: pushHistory(get().stateHistory, gs),
+      isPlayerTurn: deriveIsPlayerTurn(next),
+    })
+    const BOT_EMOTES = ['😊', '😐', '😍', '😵']
+    if (Math.random() < 0.2)
+      get().sendEmote(
+        bot.id,
+        BOT_EMOTES[Math.floor(Math.random() * BOT_EMOTES.length)]
+      )
   },
 
   /**
@@ -421,14 +509,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * engine function — just nulls out `gameState`.
    */
   undoLastMove: () => {
-    const { stateHistory } = get();
-    if (stateHistory.length === 0) return;
-    const prev = stateHistory[stateHistory.length - 1];
-    set({ gameState: prev, stateHistory: stateHistory.slice(0, -1), isPlayerTurn: deriveIsPlayerTurn(prev) });
+    const { stateHistory } = get()
+    if (stateHistory.length === 0) return
+    const prev = stateHistory[stateHistory.length - 1]
+    set({
+      gameState: prev,
+      stateHistory: stateHistory.slice(0, -1),
+      isPlayerTurn: deriveIsPlayerTurn(prev),
+    })
   },
 
   resetGame: () => {
-    set({ gameState: null, stateHistory: [], isPlayerTurn: false, isDebugMode: false });
+    set({
+      gameState: null,
+      stateHistory: [],
+      isPlayerTurn: false,
+      isDebugMode: false,
+    })
   },
 
   setDebugMode: (v) => set({ isDebugMode: v }),
@@ -439,27 +536,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Only allowed before PLAYING starts — mode is locked once cards are in play.
    */
   setRulesMode: (mode) => {
-    const gs = get().gameState;
-    if (!gs || gs.phase !== 'PREPARATION') return;
-    set({ gameState: { ...gs, config: { ...gs.config, mode } } });
+    const gs = get().gameState
+    if (!gs || gs.phase !== 'PREPARATION') return
+    set({ gameState: { ...gs, config: { ...gs.config, mode } } })
   },
 
   passTurn: () => {
-    const gs = get().gameState;
-    if (!gs || gs.phase !== 'PLAYING') return;
-    const human = gs.players[gs.currentPlayerIndex];
-    if (!human || human.isBot) return;
-    if (getValidMoves(human, gs).length > 0) return;
-    if (gs.pile.length > 0) return; // pile not empty — must takePile instead
-    const nextIndex = nextNonFinished(gs.players, gs.currentPlayerIndex);
-    const next = withDerivedFields({ ...gs, currentPlayerIndex: nextIndex });
-    set({ gameState: next, stateHistory: pushHistory(get().stateHistory, gs), isPlayerTurn: deriveIsPlayerTurn(next) });
+    const gs = get().gameState
+    if (!gs || gs.phase !== 'PLAYING') return
+    const human = gs.players[gs.currentPlayerIndex]
+    if (!human || human.isBot) return
+    if (getValidMoves(human, gs).length > 0) return
+    if (gs.pile.length > 0) return // pile not empty — must takePile instead
+    const nextIndex = nextNonFinished(gs.players, gs.currentPlayerIndex)
+    const next = withDerivedFields({ ...gs, currentPlayerIndex: nextIndex })
+    set({
+      gameState: next,
+      stateHistory: pushHistory(get().stateHistory, gs),
+      isPlayerTurn: deriveIsPlayerTurn(next),
+    })
   },
 
   sendEmote: (playerId, emote) => {
-    const gs = get().gameState;
-    if (!gs) return;
-    const newEmotes = [...gs.emotes, { playerId, emote, timestamp: Date.now() }].slice(-10);
-    set({ gameState: { ...gs, emotes: newEmotes } });
+    const gs = get().gameState
+    if (!gs) return
+    const newEmotes = [
+      ...gs.emotes,
+      { playerId, emote, timestamp: Date.now() },
+    ].slice(-10)
+    set({ gameState: { ...gs, emotes: newEmotes } })
   },
-}));
+}))
