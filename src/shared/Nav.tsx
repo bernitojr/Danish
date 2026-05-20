@@ -7,10 +7,11 @@ import logoDwc from '@/assets/logo-DWCV1.png'
 import { useAuth } from '@/hooks/useAuth'
 
 const NAV_LINKS = [
-  { label: 'Règles', href: '#' },
-  { label: 'Jouer', href: '#' },
-  { label: 'Classement', href: '#' },
-  { label: 'Profil', href: '#' },
+  { label: 'Home', href: '/' },
+  { label: 'Règles', href: '' },
+  { label: 'Jouer', href: '/Danish/game' },
+  { label: 'Classement', href:'' },
+  { label: 'Profil', href: '/Danish/profile' },
 ]
 
 interface NavProps {
@@ -39,7 +40,7 @@ export function Nav({ onNavigate }: NavProps) {
           "
         >
           {/* BRAND */}
-          <a href="#" className="flex items-center gap-2.5 no-underline">
+          <a href="/" className="flex items-center gap-2.5 no-underline">
             <img
               src={logoDwc}
               alt="Logo DWC"

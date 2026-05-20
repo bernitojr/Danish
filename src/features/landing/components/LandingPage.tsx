@@ -1,9 +1,8 @@
 // import { useTheme } from './hooks/useTheme';
 // import { ThemeToggle } from './components/ThemeToggle';
-import { useGameStore } from '../game/store/gameStore'
-import { Nav } from './components/Nav'
-import { Hero } from './components/Hero'
-import { QuickAccessCards } from './components/QuickAccessCard'
+import { useGameStore } from '../../game/store/gameStore'
+import { Hero } from './Hero'
+import { QuickAccessCards } from './QuickAccessCard'
 export function LandingPage({
   onNavigate,
 }: {
@@ -17,7 +16,7 @@ export function LandingPage({
 
   return (
     <div>
-      <Nav onNavigate={onNavigate} />
+      {/* <Nav onNavigate={onNavigate} /> */}
       <Hero />
       <QuickAccessCards onNavigate={onNavigate} />
     </div>

@@ -47,7 +47,7 @@ export function useAuth() {
     if (error) throw error
 
     // créer le profil dans la table "profiles"
-    const { error: profileError } = await supabase
+    const { data: newProfile, error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: data.user?.id,
@@ -55,10 +55,10 @@ export function useAuth() {
       })
       .select('*')
       .single()
-    if (profileError) throw profileError
+    if (profileError || !newProfile) throw profileError ?? new Error('Profil introuvable après inscription')
 
     setUser(data.user)
-    setProfile({ username, avatar_url: null, role: 'player' })
+    setProfile(newProfile)
   }
 
   const signOut = async () => {

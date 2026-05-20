@@ -6,6 +6,7 @@ type ProfileStats = {
   totalGames: number
   wins: number
   winRate: number
+  points: number
   placements: { 1: number; 2: number; 3: number; 4: number }
 }
 
@@ -19,6 +20,17 @@ async function fetchGameResults(userId: string) {
   return data
 }
 
+async function fetchPlayerPoints(userId: string) {
+  const { data, error } = await supabase
+    .from('player_points')
+    .select('points')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) throw error
+  return data?.points ?? 0
+}
+
 export function useProfileStats() {
   const { user } = useAuthStore()
 
@@ -27,20 +39,22 @@ export function useProfileStats() {
     queryFn: async () => {
       if (!user?.id) throw new Error('Non connecté')
 
-      const results = await fetchGameResults(user.id)
+      const [results, points] = await Promise.all([
+        fetchGameResults(user.id),
+        fetchPlayerPoints(user.id),
+      ])
 
-      // TODO 1 : calculer totalGames (combien de lignes ?)
+      // calculer totalGames (combien de lignes ?)
       const totalGames = results.length
 
-      // TODO 2 : calculer wins (lignes où placement === 1)
+      // calculer wins (lignes où placement === 1)
       const wins = results.filter((r) => r.placement === 1).length
 
-      // TODO 3 : calculer winRate (wins / totalGames * 100, arrondi)
+      // calculer winRate (wins / totalGames * 100, arrondi)
       //           attention : que retournes-tu si totalGames === 0 ?
       const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0
 
-      // TODO 4 : calculer placements { 1: N, 2: N, 3: N, 4: N }
-      //           indice : tu peux utiliser reduce() ou filter() pour chaque valeur
+      // calculer placements { 1: N, 2: N, 3: N, 4: N }
       const placements = {
         1: results.filter((r) => r.placement === 1).length,
         2: results.filter((r) => r.placement === 2).length,
@@ -48,7 +62,13 @@ export function useProfileStats() {
         4: results.filter((r) => r.placement === 4).length,
       }
 
-      return { totalGames, wins, winRate, placements } satisfies ProfileStats
+      return {
+        totalGames,
+        wins,
+        winRate,
+        placements,
+        points,
+      } satisfies ProfileStats
     },
     enabled: !!user?.id,
   })

@@ -1,12 +1,29 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
 import { GameBoard } from '@/features/game/components/GameBoard'
-import { LandingPage } from '@/features/landing/LandingPage'
+import { LandingPage } from '@/features/landing/components/LandingPage'
 import { useGameStore } from '@/features/game/store/gameStore'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { AuthPage } from './features/Auth/AuthPage'
-import { useTheme } from './features/landing/hooks/useTheme'
-import { ProfilePage } from './features/Auth/ProfilePage'
+import { useTheme } from './features/profil/hooks/useTheme'
+import { ProfilePage } from './features/profil/components/ProfilePage'
+import { Nav } from './shared/Nav'
+// import { Nav } from './shared/components/Nav'
+
+function Layout({
+  children,
+  onNavigate,
+}: {
+  children: React.ReactNode
+  onNavigate: (to: string) => void
+}) {
+  return (
+    <div>
+      <Nav onNavigate={onNavigate} />
+      <main>{children}</main>
+    </div>
+  )
+}
 
 const DebugPage = import.meta.env.DEV
   ? lazy(() =>
@@ -68,24 +85,27 @@ function App() {
   const base = import.meta.env.BASE_URL
   const cleanPath = path.replace(base.replace(/\/$/, ''), '') || '/'
 
-  if (cleanPath === '/game') return <GameRoute />
   if (cleanPath === '/auth') return <AuthPage onNavigate={navigate} />
-  if (cleanPath === '/profile') {
-    if (isLoading) return <div>Chargement...</div>
-    if (!user) {
-      navigate('/auth')
-      return null
-    }
-    return <ProfilePage />
-  }
-  if (cleanPath === '/debug' && DebugPage)
-    return (
-      <Suspense fallback={null}>
-        <DebugPage />
-      </Suspense>
-    )
 
-  return <LandingPage onNavigate={navigate} />
+  return (
+    <Layout onNavigate={navigate}>
+      {cleanPath === '/game' && <GameRoute />}
+      {cleanPath === '/profile' &&
+        (isLoading ? (
+          <div>Chargement...</div>
+        ) : !user ? (
+          (navigate('/auth'), null)
+        ) : (
+          <ProfilePage />
+        ))}
+      {cleanPath === '/debug' && DebugPage && (
+        <Suspense fallback={null}>
+          <DebugPage />
+        </Suspense>
+      )}
+      {cleanPath === '/' && <LandingPage onNavigate={navigate} />}
+    </Layout>
+  )
 }
 
 export default App
