@@ -133,18 +133,7 @@ export function ProfilePage() {
           {/* Identity card */}
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
             {/* Gradient header */}
-            <div className="h-[80px] bg-[linear-gradient(135deg,hsl(var(--primary)/0.55),hsl(var(--accent)/0.35))] relative flex items-start p-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full border-[1.5px] border-white/70 flex items-center justify-center">
-                  <span
-                    className="text-white/90 font-bold leading-none"
-                    style={{ fontSize: '6px' }}
-                  >
-                    DWC
-                  </span>
-                </div>
-              </div>
-            </div>
+            <div className="h-[80px] bg-[linear-gradient(135deg,hsl(var(--primary)/0.55),hsl(var(--accent)/0.35))] relative flex items-start p-3"></div>
 
             {/* Body */}
             <div className="px-6 pb-6">
@@ -228,7 +217,7 @@ export function ProfilePage() {
           {/* Settings card */}
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
             <div className="px-5 py-3.5 border-b border-[hsl(var(--border))]">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
                 Paramètres du compte
               </h3>
             </div>
@@ -374,7 +363,7 @@ export function ProfilePage() {
           {/* Performances card */}
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
             <div className="px-6 py-3.5 border-b border-[hsl(var(--border))]">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]">
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
                 Performances · Saison {new Date().getFullYear()}
               </h3>
             </div>
@@ -414,7 +403,7 @@ export function ProfilePage() {
                     <span className="text-[11px] text-[hsl(var(--foreground-muted))] w-5 shrink-0 font-medium">
                       {label}
                     </span>
-                    <div className="flex-1 h-1.5 bg-[hsl(var(--border))] rounded-full overflow-hidden">
+                    <div className="flex-1 h-1.5 bg-[hsl(var(--background-dark))] rounded-full overflow-hidden border border-[hsl(var(--background-dark))]">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -432,21 +421,20 @@ export function ProfilePage() {
                 ))}
               </div>
             </div>
-          </div>
-
-          {/* Parties récentes card */}
-          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
-            <div className="px-6 py-3.5 border-b border-[hsl(var(--border))] flex items-center justify-between">
-              <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]">
-                Parties récentes
-              </h3>
-              <span className="text-[11px] text-[hsl(var(--foreground-muted))]">
-                {total} partie{total !== 1 ? 's' : ''} jouée
-                {total !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="px-6 py-12 flex items-center justify-center text-sm text-[hsl(var(--foreground-muted))]">
-              Aucune partie récente
+            {/* Séparateur → border-t remplace la deuxième card */}
+            <div className="border-t border-[hsl(var(--border))]">
+              <div className="px-6 py-3.5 border-b border-[hsl(var(--border))] flex items-center justify-between">
+                <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
+                  Parties récentes
+                </h3>
+                <span className="text-[11px] text-[hsl(var(--foreground-muted))]">
+                  {total} partie{total !== 1 ? 's' : ''} jouée
+                  {total !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="px-6 py-12 flex items-center justify-center text-sm text-[hsl(var(--foreground-muted))]">
+                Aucune partie récente
+              </div>
             </div>
           </div>
         </div>
