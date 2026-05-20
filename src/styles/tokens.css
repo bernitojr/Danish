@@ -40,6 +40,10 @@
 --delete: 0 80% 45%;
 --info: 211 80% 54%;
 
+--gold:   43 85% 55%;    /* or chaud */
+--silver: 220 10% 65%;   /* argent bleuté froid */
+--bronze: 25 70% 45%;    /* bronze brun-orangé */
+
 }
 
 /* ── Mode light: on override seulement les sémantiques ── */
@@ -62,4 +66,8 @@
   /* glow autour du logo */
   --glow-primary: 230 53% 54% / 0.5;
  --glow-accent: 153 65% 42% / 0.25;
+
+ --gold:   43 90% 42%;
+--silver: 220 12% 50%;
+--bronze: 25 75% 38%;
 }

@@ -1,11 +1,55 @@
+import { useRef } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileStats } from '../hooks/useProfileStats'
+import { supabase } from '@/lib/supabase'
 
 export function ProfilePage() {
-  const { profile } = useAuthStore()
+  const { profile, user, setProfile } = useAuthStore()
   const { data, isLoading, error } = useProfileStats()
   const { signOut } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    const ext = file.name.split('.').pop()
+    const path = `${user.id}/avatar.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true })
+
+    if (uploadError) {
+      console.error('Avatar upload failed:', uploadError)
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(path)
+
+    const publicUrl = urlData.publicUrl
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('Profile update failed:', updateError)
+      return
+    }
+
+    if (profile) {
+      setProfile({ ...profile, avatar_url: publicUrl })
+    }
+  }
 
   if (isLoading) {
     return (
@@ -41,39 +85,48 @@ export function ProfilePage() {
     {
       label: '1er',
       count: p1,
-      color: 'hsl(var(--warning))',
-      bg: 'hsl(var(--warning)/0.08)',
-      border: 'hsl(var(--warning)/0.25)',
+      color: 'hsl(var(--gold))',
+      bg: 'hsl(var(--gold)/0.25)',
+      border: 'hsl(var(--gold))',
       sub: 'Victoires',
     },
     {
       label: '2e',
       count: p2,
-      color: 'hsl(0 0% 72%)',
-      bg: 'hsl(0 0% 72%/0.07)',
-      border: 'hsl(0 0% 72%/0.18)',
+      color: 'hsl(var(--silver))',
+      bg: 'hsl(var(--silver)/0.35)',
+      border: 'hsl(var(--silver))',
       sub: '2ièmes places',
     },
     {
       label: '3e',
       count: p3,
-      color: 'hsl(25 80% 42%)',
-      bg: 'hsl(25 80% 42%/0.08)',
-      border: 'hsl(25 80% 42%/0.22)',
+      color: 'hsl(var(--bronze))',
+      bg: 'hsl(var(--bronze)/0.25)',
+      border: 'hsl(var(--bronze))',
       sub: '3ièmes places',
     },
     {
       label: '4e',
       count: p4,
       color: 'hsl(var(--foreground-muted))',
-      bg: 'hsl(0 0% 40%/0.06)',
-      border: 'hsl(0 0% 40%/0.12)',
+      bg: 'hsl(var(--foreground-muted)/0.15)',
+      border: 'hsl(var(--foreground-muted))',
       sub: '4ièmes places',
     },
   ]
 
   return (
     <div className="max-w-[1280px] mx-auto px-8 relative z-[2] w-full">
+      {/* Hidden file input — triggered by avatar click or settings row */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div className="grid grid-cols-[380px_1fr] gap-6 pb-20 items-start mt-[5vh] max-md:grid-cols-1">
         {/* ── LEFT COLUMN ── */}
         <div className="flex flex-col gap-4 max-md:max-w-[480px] max-md:w-full">
@@ -95,15 +148,40 @@ export function ProfilePage() {
 
             {/* Body */}
             <div className="px-6 pb-6">
-              {/* Avatar — overflows the header */}
-              <div className="relative inline-block mt-[-44px] mb-4">
-                <div className="w-[88px] h-[88px] rounded-full bg-[hsl(var(--accent)/0.75)] flex items-center justify-center border-4 border-[hsl(var(--card))] shadow-lg">
-                  <span className="font-display font-extrabold text-2xl text-[hsl(var(--foreground))]">
-                    {initials}
-                  </span>
+              {/* Avatar — overflows the header, clickable to change photo */}
+              <button
+                onClick={handleAvatarClick}
+                className="relative inline-block mt-[-44px] mb-4 group"
+                aria-label="Changer la photo de profil"
+              >
+                <div className="w-[88px] h-[88px] rounded-full bg-[hsl(var(--accent)/0.75)] flex items-center justify-center border-4 border-[hsl(var(--card))] shadow-lg overflow-hidden">
+                  {profile?.avatar_url ? (
+                    <img
+                      src={profile.avatar_url}
+                      alt={profile.username}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display font-extrabold text-2xl text-[hsl(var(--foreground))]">
+                      {initials}
+                    </span>
+                  )}
+                  {/* hover overlay */}
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <svg
+                      className="w-5 h-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                  </div>
                 </div>
                 <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-[hsl(var(--accent))] border-2 border-[hsl(var(--card))]" />
-              </div>
+              </button>
 
               {/* Name */}
               <h2 className="font-display font-extrabold text-[1.35rem] tracking-[-0.03em] text-[hsl(var(--foreground))] leading-tight mb-0.5">
@@ -156,7 +234,10 @@ export function ProfilePage() {
             </div>
 
             {/* Photo de profil */}
-            <button className="w-full flex items-center gap-3.5 px-5 py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--foreground)/0.04)] transition-colors text-left group">
+            <button
+              onClick={handleAvatarClick}
+              className="w-full flex items-center gap-3.5 px-5 py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--foreground)/0.04)] transition-colors text-left group"
+            >
               <div className="w-9 h-9 rounded-full bg-[hsl(var(--primary)/0.1)] flex items-center justify-center shrink-0">
                 <svg
                   className="w-4 h-4 text-[hsl(var(--primary))]"
