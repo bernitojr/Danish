@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileStats } from '../hooks/useProfileStats'
@@ -14,6 +14,13 @@ export function ProfilePage() {
   const { signOut } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isModalPasswordOpen, setIsModalPasswordOpen] = useState(false)
+  const [showLoading, setShowLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isLoading) return
+    const timer = setTimeout(() => setShowLoading(true), 300)
+    return () => clearTimeout(timer)
+  }, [isLoading])
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -73,13 +80,12 @@ export function ProfilePage() {
       setProfile({ ...profile, avatar_url: publicUrl })
     }
   }
-
   if (isLoading) {
-    return (
+    return showLoading ? (
       <div className="flex items-center justify-center h-full text-[hsl(var(--foreground-muted))]">
         Chargement…
       </div>
-    )
+    ) : null
   }
 
   if (error) {

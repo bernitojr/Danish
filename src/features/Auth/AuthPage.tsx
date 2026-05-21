@@ -23,6 +23,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isHoveringSubmit, setIsHoveringSubmit] = useState(false)
   const { signIn, signUp } = useAuth()
 
   // Variable CSS d'accentuation active — tout s'aligne dessus
@@ -179,10 +180,16 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="w-full py-[0.72rem] px-4 font-sans text-[0.84rem] font-semibold cursor-pointer flex items-center justify-center gap-2 mt-1 rounded-[calc(var(--radius)-2px)] transition-[background,border-color,box-shadow,transform,color,opacity] duration-500 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+            onMouseEnter={() => setIsHoveringSubmit(true)}
+            onMouseLeave={() => setIsHoveringSubmit(false)}
+            className="w-full py-[0.72rem] px-4 font-sans text-[0.84rem] font-semibold cursor-pointer flex items-center justify-center gap-2 mt-1 rounded-[calc(var(--radius)-2px)] transition-[background,border-color,box-shadow,transform] duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              background: `hsl(var(${accentVar}) / 0.14)`,
-              border: `1px solid hsl(var(${accentVar}) / 0.45)`,
+              background: isHoveringSubmit
+                ? `hsl(var(${accentVar}) / 0.28)`
+                : `hsl(var(${accentVar}) / 0.14)`,
+              border: isHoveringSubmit
+                ? `1px solid hsl(var(${accentVar}) / 0.8)`
+                : `1px solid hsl(var(${accentVar}) / 0.45)`,
               color: accentHsl,
             }}
           >

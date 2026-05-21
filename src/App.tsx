@@ -94,9 +94,7 @@ function App() {
       <Layout onNavigate={navigate}>
         {cleanPath === '/game' && <GameRoute />}
         {cleanPath === '/profile' &&
-          (isLoading ? (
-            <div>Chargement...</div>
-          ) : !user ? (
+          (isLoading ? null : !user ? (
             (navigate('/auth'), null)
           ) : (
             <ProfilePage />
