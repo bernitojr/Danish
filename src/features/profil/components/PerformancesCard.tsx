@@ -93,7 +93,7 @@ export function PerformancesCard({
         <div className="flex flex-col gap-3">
           {placements.map(({ label, count, color }) => (
             <div key={label} className="flex items-center gap-3">
-              <span className="text-[11px] text-[hsl(var(--foreground-muted))] w-5 shrink-0 font-medium">
+              <span className="text-[11px] text-[hsl(var(--foreground))] w-5 shrink-0 font-medium">
                 {label}
               </span>
               <div className="flex-1 h-1.5 bg-[hsl(var(--background-dark))] rounded-full overflow-hidden border border-[hsl(var(--background-dark))]">
@@ -105,7 +105,7 @@ export function PerformancesCard({
                   }}
                 />
               </div>
-              <span className="text-[11px] text-[hsl(var(--foreground-muted))] w-8 text-right shrink-0">
+              <span className="text-[11px] text-[hsl(var(--foreground))] w-8 text-right shrink-0">
                 {total > 0 ? `${Math.round((count / total) * 100)}%` : '0%'}
               </span>
             </div>
