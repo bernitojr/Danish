@@ -8,6 +8,7 @@ import { AuthPage } from './features/Auth/AuthPage'
 import { useTheme } from './features/profil/hooks/useTheme'
 import { ProfilePage } from './features/profil/components/ProfilePage'
 import { Nav } from './shared/Nav'
+import { Toaster } from 'sonner'
 // import { Nav } from './shared/components/Nav'
 
 function Layout({
@@ -88,23 +89,26 @@ function App() {
   if (cleanPath === '/auth') return <AuthPage onNavigate={navigate} />
 
   return (
-    <Layout onNavigate={navigate}>
-      {cleanPath === '/game' && <GameRoute />}
-      {cleanPath === '/profile' &&
-        (isLoading ? (
-          <div>Chargement...</div>
-        ) : !user ? (
-          (navigate('/auth'), null)
-        ) : (
-          <ProfilePage />
-        ))}
-      {cleanPath === '/debug' && DebugPage && (
-        <Suspense fallback={null}>
-          <DebugPage />
-        </Suspense>
-      )}
-      {cleanPath === '/' && <LandingPage onNavigate={navigate} />}
-    </Layout>
+    <>
+      <Toaster position="bottom-right" richColors />
+      <Layout onNavigate={navigate}>
+        {cleanPath === '/game' && <GameRoute />}
+        {cleanPath === '/profile' &&
+          (isLoading ? (
+            <div>Chargement...</div>
+          ) : !user ? (
+            (navigate('/auth'), null)
+          ) : (
+            <ProfilePage />
+          ))}
+        {cleanPath === '/debug' && DebugPage && (
+          <Suspense fallback={null}>
+            <DebugPage />
+          </Suspense>
+        )}
+        {cleanPath === '/' && <LandingPage onNavigate={navigate} />}
+      </Layout>
+    </>
   )
 }
 

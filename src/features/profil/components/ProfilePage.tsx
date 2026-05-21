@@ -1,14 +1,16 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileStats } from '../hooks/useProfileStats'
 import { supabase } from '@/lib/supabase'
+import { ChangePasswordModal } from './ChangePasswordModal'
 
 export function ProfilePage() {
   const { profile, user, setProfile } = useAuthStore()
   const { data, isLoading, error } = useProfileStats()
   const { signOut } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isModalPasswordOpen, setIsModalPasswordOpen] = useState(false)
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -264,7 +266,10 @@ export function ProfilePage() {
             </button>
 
             {/* Mot de passe */}
-            <button className="w-full flex items-center gap-3.5 px-5 py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--foreground)/0.04)] transition-colors text-left group">
+            <button
+              className="w-full flex items-center gap-3.5 px-5 py-4 border-b border-[hsl(var(--border))] hover:bg-[hsl(var(--foreground)/0.04)] transition-colors text-left group"
+              onClick={() => setIsModalPasswordOpen(true)}
+            >
               <div className="w-9 h-9 rounded-full bg-[hsl(var(--primary)/0.1)] flex items-center justify-center shrink-0">
                 <svg
                   className="w-4 h-4 text-[hsl(var(--primary))]"
@@ -439,6 +444,10 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
+      <ChangePasswordModal
+        isOpen={isModalPasswordOpen}
+        onClose={() => setIsModalPasswordOpen(false)}
+      />
     </div>
   )
 }
