@@ -29,7 +29,7 @@ async function fetchPlayerPoints(userId: string) {
     .from('player_points')
     .select('points')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) throw error
   return data?.points ?? 0
