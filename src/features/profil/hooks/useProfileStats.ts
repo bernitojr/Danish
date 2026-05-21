@@ -9,7 +9,7 @@ type ProfileStats = {
   points: number
   placements: { 1: number; 2: number; 3: number; 4: number }
   lastPlayedAt: string // date last game
-  recentGame: { placement: number; played_at: string }[]
+  recentGames: { placement: number; played_at: string }[]
 }
 
 async function fetchGameResults(userId: string) {
@@ -80,7 +80,7 @@ export function useProfileStats() {
         placements,
         lastPlayedAt,
         points,
-        recentGame: [...results].sort(
+        recentGames: [...results].sort(
           (a, b) =>
             new Date(b.played_at).getTime() - new Date(a.played_at).getTime()
         ),
