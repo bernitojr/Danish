@@ -65,51 +65,73 @@ export function ChangePasswordModal({ isOpen, onClose }: Props) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Changer le mot de passe">
-      <div className="flex flex-col gap-4">
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => e.preventDefault()}
-        >
+      <form
+        className="flex flex-col gap-3"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        {/* Ancien mot de passe */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
+            Ancien mot de passe
+          </label>
           <input
             type="password"
-            autoComplete = "current-password"
-            placeholder="Ancien mot de passe"
+            autoComplete="current-password"
+            placeholder="••••••••"
             value={form.oldPassword}
             onChange={(e) => setForm({ ...form, oldPassword: e.target.value })}
-            className="w-full px-4 py-2 border rounded-md bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+            className="w-full px-4 py-2.5 rounded-[var(--radius)] bg-[hsl(var(--background-dark))] border border-[hsl(var(--border))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-muted))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))] focus:border-[hsl(var(--primary))] transition-colors"
           />
+        </div>
+
+        {/* Nouveau mot de passe */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
+            Nouveau mot de passe
+          </label>
           <input
             type="password"
-            autoComplete = "new-password"
-            placeholder="Nouveau mot de passe"
+            autoComplete="new-password"
+            placeholder="••••••••"
             value={form.newPassword}
             onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
-            className="w-full px-4 py-2 border rounded-md bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+            className="w-full px-4 py-2.5 rounded-[var(--radius)] bg-[hsl(var(--background-dark))] border border-[hsl(var(--border))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-muted))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))] focus:border-[hsl(var(--primary))] transition-colors"
           />
+        </div>
+
+        {/* Confirmation */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
+            Confirmer le nouveau mot de passe
+          </label>
           <input
             type="password"
-            autoComplete = "new-password"
-            placeholder="Confirmer le nouveau mot de passe"
+            autoComplete="new-password"
+            placeholder="••••••••"
             value={form.confirm}
             onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-            className="w-full px-4 py-2 border rounded-md bg-[hsl(var(--card))] text-[hsl(var(--foreground))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--primary))]"
+            className="w-full px-4 py-2.5 rounded-[var(--radius)] bg-[hsl(var(--background-dark))] border border-[hsl(var(--border))] text-sm text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-muted))] focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))] focus:border-[hsl(var(--primary))] transition-colors"
           />
+        </div>
 
+        {/* Actions */}
+        <div className="flex flex-col gap-2 pt-2 border-t border-[hsl(var(--border))] mt-1">
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="w-full px-4 py-2 bg-[hsl(var(--primary))] text-white rounded-md hover:bg-[hsl(var(--primary-hover))] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2.5 rounded-[var(--radius)] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] text-sm font-semibold hover:opacity-90 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 shadow-lg shadow-[hsl(var(--primary)/0.25)]"
           >
-            {isLoading ? 'Chargement...' : 'Mettre à jour le mot de passe'}
+            {isLoading ? 'Mise à jour…' : 'Mettre à jour'}
           </button>
-        </form>
-        <button
-          onClick={onClose}
-          className="w-full px-4 py-2 bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] rounded-md hover:bg-[hsl(var(--secondary-hover))] transition-colors"
-        >
-          Annuler
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full px-4 py-2.5 rounded-[var(--radius)] border border-[hsl(var(--border))] text-sm font-medium text-[hsl(var(--foreground-secondary))] hover:border-[hsl(var(--primary)/0.5)] hover:text-[hsl(var(--foreground))] transition-colors"
+          >
+            Annuler
+          </button>
+        </div>
+      </form>
     </Modal>
   )
 }
