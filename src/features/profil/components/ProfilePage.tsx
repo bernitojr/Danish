@@ -18,6 +18,25 @@ export function ProfilePage() {
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
   }
+
+  const handleTitleChange = async (titleId: string | null) => {
+    if (!user) return
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ active_title_id: titleId })
+      .eq('id', user.id)
+
+    if (updateError) {
+      console.error('Profile title update failed:', updateError)
+      return
+    }
+
+    if (profile) {
+      setProfile({ ...profile, active_title_id: titleId })
+    }
+  }
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !user) return
@@ -92,7 +111,11 @@ export function ProfilePage() {
             avatarUrl={profile?.avatar_url ?? null}
             createdAt={profile?.created_at ?? ''}
             points={data?.points ?? 0}
+            activeTitle={profile?.active_title_id ?? null}
+            unlockedTitles={data?.unlockedTitles ?? []}
             onAvatarClick={handleAvatarClick}
+            onTitleChange={handleTitleChange}
+            allTitles={data?.allTitles ?? []}
           />
           <div className="border-t border-[hsl(var(--border))]">
             <ProfileSettingsCard
