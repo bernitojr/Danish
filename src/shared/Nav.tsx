@@ -7,7 +7,7 @@ import logoDwc from '@/assets/logo-DWCV1.png'
 // import { useAuth } from '@/hooks/useAuth'
 
 const NAV_LINKS = [
-  { label: 'Home', href: '/' },
+  { label: 'Home', href: '/Danish' },
   { label: 'Règles', href: '' },
   { label: 'Jouer', href: '/Danish/game' },
   { label: 'Classement', href: '' },

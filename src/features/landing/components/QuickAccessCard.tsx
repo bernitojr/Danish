@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Play, User, ArrowRight, Info } from 'lucide-react'
+import { FileText, Play, User, ArrowRight } from 'lucide-react'
 import { useGameStore } from '@/features/game/store/gameStore'
 import type { BotDifficulty } from '@/features/game/utils/types'
 
