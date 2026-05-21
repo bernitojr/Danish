@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { FileText, Play, User, ArrowRight, Info } from 'lucide-react';
-import { useGameStore } from '@/features/game/store/gameStore';
-import type { BotDifficulty } from '@/features/game/utils/types';
+import { useState } from 'react'
+import { FileText, Play, User, ArrowRight, Info } from 'lucide-react'
+import { useGameStore } from '@/features/game/store/gameStore'
+import type { BotDifficulty } from '@/features/game/utils/types'
 
 const STATIC_CARDS = [
   {
     // number: '01',
     tag: 'Règlement',
     title: 'Règles',
-    description: 'Les règles officielles du Danish, non négociables. Consultez les variantes, les pénalités et les cas particuliers.',
+    description:
+      'Les règles officielles du Danish, non négociables. Consultez les variantes, les pénalités et les cas particuliers.',
     icon: FileText,
     accentVar: '--accent',
     footer: 'Feature incoming',
@@ -19,36 +20,53 @@ const STATIC_CARDS = [
     // number: '03',
     tag: 'Compte',
     title: 'Profil',
-    description: 'Consulte ton historique, tes statistiques, ton classement dans le tournoi et personnalise ton avatar DWC.',
+    description:
+      'Consulte ton historique, tes statistiques, ton classement dans le tournoi et personnalise ton avatar DWC.',
     icon: User,
     accentVar: '--dwc-grey-blue',
-    footer: 'Feature incoming',
+    footer: 'Voir mon profil',
     href: '#',
     onClickPath: '/profile',
   },
-];
+]
 
-const DIFFICULTY_LEVELS: { label: string; value: BotDifficulty; desc: string }[] = [
-  { label: 'Facile', value: 'easy', desc: 'Les bots jouent au hasard, sans aucune stratégie.' },
-  { label: 'Moyen', value: 'medium', desc: 'Les bots appliquent quelques stratégies de base.' },
-  { label: 'Difficile', value: 'hard', desc: 'Les bots jouent avec une stratégie avancée — prépare-toi !' },
-];
+const DIFFICULTY_LEVELS: {
+  label: string
+  value: BotDifficulty
+  desc: string
+}[] = [
+  {
+    label: 'Facile',
+    value: 'easy',
+    desc: 'Les bots jouent au hasard, sans aucune stratégie.',
+  },
+  {
+    label: 'Moyen',
+    value: 'medium',
+    desc: 'Les bots appliquent quelques stratégies de base.',
+  },
+  {
+    label: 'Difficile',
+    value: 'hard',
+    desc: 'Les bots jouent avec une stratégie avancée — prépare-toi !',
+  },
+]
 
 interface QuickAccessCardsProps {
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string) => void
 }
 
 export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
-  const { setDifficulty } = useGameStore();
-  const [diffIndex, setDiffIndex] = useState(0);
-  const currentDiff = DIFFICULTY_LEVELS[diffIndex]!;
+  const { setDifficulty } = useGameStore()
+  const [diffIndex, setDiffIndex] = useState(0)
+  const currentDiff = DIFFICULTY_LEVELS[diffIndex]!
 
   // Pourcentage de remplissage du slider (0%, 50%, 100%)
-  const fillPercent = (diffIndex / (DIFFICULTY_LEVELS.length - 1)) * 100;
+  const fillPercent = (diffIndex / (DIFFICULTY_LEVELS.length - 1)) * 100
 
   function handlePlay() {
-    setDifficulty(currentDiff.value);
-    onNavigate('/game');
+    setDifficulty(currentDiff.value)
+    onNavigate('/game')
   }
 
   return (
@@ -63,7 +81,6 @@ export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
           {/* Card 1 — Règles */}
           <CardStatic
             data={STATIC_CARDS[0]!}
@@ -84,11 +101,10 @@ export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
             data={STATIC_CARDS[1]!}
             onClick={() => onNavigate(STATIC_CARDS[1]!.onClickPath)}
           />
-
         </div>
       </div>
     </section>
-  );
+  )
 }
 
 // ─────────────────────────────────────────────
@@ -102,7 +118,7 @@ const CARD_BASE_CLASSES = `
   flex flex-col gap-5
   transition-all duration-300
   hover:-translate-y-1
-`;
+`
 
 // Au repos : bordure 1px globale grise + bordure top colorée (2px)
 // Au hover : bordure 1px colorée tout autour + glow projeté
@@ -112,12 +128,12 @@ function getCardBoxShadow(isHovered: boolean): string {
       0 0 0 1px hsl(var(--card-accent) / 0.5),
       0 20px 50px -12px hsl(var(--card-accent) / 0.35),
       inset 0 2px 0 0 hsl(var(--card-accent))
-    `;
+    `
   }
   return `
     0 0 0 1px hsl(var(--border)),
     inset 0 2px 0 0 hsl(var(--card-accent))
-  `;
+  `
 }
 
 // ─────────────────────────────────────────────
@@ -125,15 +141,21 @@ function getCardBoxShadow(isHovered: boolean): string {
 // ─────────────────────────────────────────────
 
 interface CardPlayProps {
-  diffIndex: number;
-  currentDiff: typeof DIFFICULTY_LEVELS[number];
-  fillPercent: number;
-  onDiffChange: (i: number) => void;
-  onPlay: () => void;
+  diffIndex: number
+  currentDiff: (typeof DIFFICULTY_LEVELS)[number]
+  fillPercent: number
+  onDiffChange: (i: number) => void
+  onPlay: () => void
 }
 
-function CardPlay({ diffIndex, currentDiff, fillPercent, onDiffChange, onPlay }: CardPlayProps) {
-  const [isHovered, setIsHovered] = useState(false);
+function CardPlay({
+  diffIndex,
+  currentDiff,
+  fillPercent,
+  onDiffChange,
+  onPlay,
+}: CardPlayProps) {
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <div
@@ -173,7 +195,8 @@ function CardPlay({ diffIndex, currentDiff, fillPercent, onDiffChange, onPlay }:
           Jouer
         </div>
         <p className="text-sm text-[hsl(var(--foreground-secondary))] leading-relaxed">
-          Lance une nouvelle partie contre des bots. Choisis la difficulté avant de jouer.
+          Lance une nouvelle partie contre des bots. Choisis la difficulté avant
+          de jouer.
         </p>
 
         {/* Slider de difficulté avec remplissage progressif */}
@@ -184,9 +207,10 @@ function CardPlay({ diffIndex, currentDiff, fillPercent, onDiffChange, onPlay }:
                 key={d.value}
                 className="transition-all duration-1000"
                 style={{
-                  color: i === diffIndex
-                    ? 'hsl(var(--card-accent))'
-                    : 'hsl(var(--foreground-muted))',
+                  color:
+                    i === diffIndex
+                      ? 'hsl(var(--card-accent))'
+                      : 'hsl(var(--foreground-muted))',
                   fontWeight: i === diffIndex ? 800 : 400,
                 }}
               >
@@ -194,39 +218,42 @@ function CardPlay({ diffIndex, currentDiff, fillPercent, onDiffChange, onPlay }:
               </span>
             ))}
           </div>
-       {/* Track custom */}
-<div className="relative h-1.5 rounded-full" style={{ background: 'hsl(var(--border))' }}>
-  {/* Fill animé */}
-  <div
-    className="absolute top-0 left-0 h-full rounded-full"
-    style={{
-      width: `${fillPercent}%`,
-      background: 'hsl(var(--card-accent))',
-      transition: 'width 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
-    }}
-  />
-  {/* Thumb custom */}
-  <div
-    className="absolute top-1/2 w-4 h-4 rounded-full pointer-events-none"
-    style={{
-      left: `${fillPercent}%`,
-      transform: 'translate(-50%, -50%)',
-      background: 'hsl(var(--card-accent))',
-    //   boxShadow: '0 2px 8px hsl(var(--card-accent) / 0.4), 0 0 0 4px hsl(var(--card) )',
-      transition: 'left 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
-    }}
-  />
-  {/* Input invisible pour capter le drag */}
-  <input
-    type="range"
-    min={0}
-    max={2}
-    step={1}
-    value={diffIndex}
-    onChange={(e) => onDiffChange(Number(e.target.value))}
-    className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
-  />
-</div>
+          {/* Track custom */}
+          <div
+            className="relative h-1.5 rounded-full"
+            style={{ background: 'hsl(var(--border))' }}
+          >
+            {/* Fill animé */}
+            <div
+              className="absolute top-0 left-0 h-full rounded-full"
+              style={{
+                width: `${fillPercent}%`,
+                background: 'hsl(var(--card-accent))',
+                transition: 'width 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
+            />
+            {/* Thumb custom */}
+            <div
+              className="absolute top-1/2 w-4 h-4 rounded-full pointer-events-none"
+              style={{
+                left: `${fillPercent}%`,
+                transform: 'translate(-50%, -50%)',
+                background: 'hsl(var(--card-accent))',
+                //   boxShadow: '0 2px 8px hsl(var(--card-accent) / 0.4), 0 0 0 4px hsl(var(--card) )',
+                transition: 'left 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
+              }}
+            />
+            {/* Input invisible pour capter le drag */}
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={1}
+              value={diffIndex}
+              onChange={(e) => onDiffChange(Number(e.target.value))}
+              className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+            />
+          </div>
           <p className="text-xs text-[hsl(var(--foreground-secondary))] leading-relaxed min-h-[2.5em]">
             {currentDiff.desc}
           </p>
@@ -251,7 +278,7 @@ function CardPlay({ diffIndex, currentDiff, fillPercent, onDiffChange, onPlay }:
         </button>
       </div>
     </div>
-  );
+  )
 }
 
 // ─────────────────────────────────────────────
@@ -259,18 +286,21 @@ function CardPlay({ diffIndex, currentDiff, fillPercent, onDiffChange, onPlay }:
 // ─────────────────────────────────────────────
 
 interface CardStaticProps {
-  data: typeof STATIC_CARDS[number];
-  onClick: () => void;
+  data: (typeof STATIC_CARDS)[number]
+  onClick: () => void
 }
 
 function CardStatic({ data, onClick }: CardStaticProps) {
-  const Icon = data.icon;
-  const [isHovered, setIsHovered] = useState(false);
+  const Icon = data.icon
+  const [isHovered, setIsHovered] = useState(false)
 
   return (
     <a
       href={data.href}
-      onClick={(e) => { e.preventDefault(); onClick(); }}
+      onClick={(e) => {
+        e.preventDefault()
+        onClick()
+      }}
       className={`group cursor-pointer no-underline ${CARD_BASE_CLASSES}`}
       style={{
         ['--card-accent' as string]: `var(${data.accentVar})`,
@@ -297,8 +327,10 @@ function CardStatic({ data, onClick }: CardStaticProps) {
       </div>
 
       <div className="relative z-10 flex flex-col gap-2 flex-1">
-        <span className="text-[0.65rem] uppercase tracking-[0.15em] font-medium text-[hsl(var(--foreground-muted))]" style={{ color: 'hsl(var(--card-accent))' }}>
-            
+        <span
+          className="text-[0.65rem] uppercase tracking-[0.15em] font-medium text-[hsl(var(--foreground-muted))]"
+          style={{ color: 'hsl(var(--card-accent))' }}
+        >
           {data.tag}
         </span>
         <div className="text-2xl font-display font-bold text-[hsl(var(--foreground))]">
@@ -311,7 +343,7 @@ function CardStatic({ data, onClick }: CardStaticProps) {
 
       <div className="relative z-10 flex items-center justify-between pt-4 border-t border-[hsl(var(--border))]">
         <span className="inline-flex items-center gap-1.5 text-xs text-[hsl(var(--foreground-muted))]">
-          <Info size={11} />
+          {/* <Info size={11} /> */}
           {data.footer}
         </span>
         <span style={{ color: 'hsl(var(--card-accent))' }}>
@@ -319,5 +351,5 @@ function CardStatic({ data, onClick }: CardStaticProps) {
         </span>
       </div>
     </a>
-  );
+  )
 }
