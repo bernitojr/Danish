@@ -47,9 +47,9 @@ export function Nav({ onNavigate }: NavProps) {
             <img
               src={logoDwc}
               alt="Logo DWC"
-              className="w-[30px] h-[30px] object-contain"
+              className="w-[60px] h-[60px] object-contain"
             />
-            <span className="font-display font-extrabold text-base tracking-tight text-[hsl(var(--foreground))]">
+            <span className="font-sans font-extrabold text-base tracking-tight text-[hsl(var(--foreground))]">
               DWC
             </span>
           </a>
@@ -102,6 +102,7 @@ export function Nav({ onNavigate }: NavProps) {
             aria-label="Ouvrir le menu"
             className="
               md:hidden
+              ml-auto
               p-2 rounded-md
               text-[hsl(var(--foreground))]
               hover:bg-[hsl(var(--border)/0.4)]
@@ -118,6 +119,8 @@ export function Nav({ onNavigate }: NavProps) {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         links={NAV_LINKS}
+        onNavigate={onNavigate}
+        user={user}
       />
     </>
   )

@@ -1,38 +1,49 @@
-import { useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
+import { ThemeToggle } from './ThemeToggle'
+import type { User } from '@supabase/supabase-js'
 
 interface NavLink {
-  label: string;
-  href: string;
+  label: string
+  href: string
 }
 
 interface MobileDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  links: NavLink[];
+  isOpen: boolean
+  onClose: () => void
+  links: NavLink[]
+  user: User | null
+  onNavigate: (path: string) => void
 }
 
-export function MobileDrawer({ isOpen, onClose, links }: MobileDrawerProps) {
+export function MobileDrawer({
+  isOpen,
+  onClose,
+  links,
+  user,
+  onNavigate,
+}: MobileDrawerProps) {
   // Fermeture sur touche Escape
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onClose()
     }
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [onClose])
 
   // Bloquer le scroll du body pendant que le drawer est ouvert
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden'
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = ''
     }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
   // On render via portal directement dans body
   return createPortal(
@@ -110,10 +121,14 @@ export function MobileDrawer({ isOpen, onClose, links }: MobileDrawerProps) {
         {/* Footer avec actions (theme + login) */}
         <div className="flex flex-col gap-3 p-4 border-t border-[hsl(var(--border))]">
           <ThemeToggle />
-          <a
-            href="#"
-            onClick={onClose}
-            className="
+          {!user && (
+            <a
+              href="#"
+              onClick={() => {
+                onClose()
+                onNavigate('/auth')
+              }}
+              className="
               inline-flex items-center justify-center
               bg-[hsl(var(--primary))]
               text-[hsl(var(--primary-foreground))]
@@ -123,12 +138,13 @@ export function MobileDrawer({ isOpen, onClose, links }: MobileDrawerProps) {
               transition-opacity
               no-underline
             "
-          >
-            Se connecter
-          </a>
+            >
+              Se connecter
+            </a>
+          )}
         </div>
       </aside>
     </>,
     document.body
-  );
+  )
 }
