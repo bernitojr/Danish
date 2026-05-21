@@ -8,12 +8,14 @@ type ProfileStats = {
   winRate: number
   points: number
   placements: { 1: number; 2: number; 3: number; 4: number }
+  lastPlayedAt: string // date last game
+  recentGame: { placement: number; played_at: string }[]
 }
 
 async function fetchGameResults(userId: string) {
   const { data, error } = await supabase
     .from('game_results')
-    .select('placement')
+    .select('placement, played_at')
     .eq('user_id', userId)
 
   if (error) throw error
@@ -62,12 +64,26 @@ export function useProfileStats() {
         4: results.filter((r) => r.placement === 4).length,
       }
 
+      // dernier match joué (la date la plus récente), ou chaîne vide
+      const lastPlayedAt =
+        results && results.length
+          ? results
+              .map((r) => r.played_at)
+              .filter(Boolean)
+              .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+          : ''
+
       return {
         totalGames,
         wins,
         winRate,
         placements,
+        lastPlayedAt,
         points,
+        recentGame: [...results].sort(
+          (a, b) =>
+            new Date(b.played_at).getTime() - new Date(a.played_at).getTime()
+        ),
       } satisfies ProfileStats
     },
     enabled: !!user?.id,
