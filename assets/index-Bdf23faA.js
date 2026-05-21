@@ -136,15 +136,15 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
               hover:opacity-90
               transition-opacity
               no-underline
-            `,children:`Se connecter`})]})]})]}),document.body)}var cu=`/Danish/assets/logo-DWCV1-BEFJz_Rr.png`,lu=[{label:`Home`,href:`/`},{label:`Règles`,href:``},{label:`Jouer`,href:`/Danish/game`},{label:`Classement`,href:``},{label:`Profil`,href:`/Danish/profile`}];function uu({onNavigate:e}){let[t,n]=(0,A.useState)(!1),{user:r}=Ac(),{signOut:i}=hl();return(0,j.jsxs)(j.Fragment,{children:[(0,j.jsx)(`nav`,{className:`
+            `,children:`Se connecter`})]})]})]}),document.body)}var cu=`/Danish/assets/logo-DWCV1-BEFJz_Rr.png`,lu=[{label:`Home`,href:`/`},{label:`Règles`,href:``},{label:`Jouer`,href:`/Danish/game`},{label:`Classement`,href:``},{label:`Profil`,href:`/Danish/profile`}];function uu({onNavigate:e}){let[t,n]=(0,A.useState)(!1),{user:r}=Ac();return(0,j.jsxs)(j.Fragment,{children:[(0,j.jsx)(`nav`,{className:`
           sticky top-0 z-50
           bg-[hsl(var(--background)/0.8)] backdrop-blur-md
           border-b border-[hsl(var(--border)/0.5)]
         `,children:(0,j.jsxs)(`div`,{className:`
             max-w-[1280px] mx-auto
-            flex items-center justify-between
+            flex items-center gap-8
             px-8 py-3.5
-          `,children:[(0,j.jsxs)(`a`,{href:`/`,className:`flex items-center gap-2.5 no-underline`,children:[(0,j.jsx)(`img`,{src:cu,alt:`Logo DWC`,className:`w-[30px] h-[30px] object-contain`}),(0,j.jsx)(`span`,{className:`font-display font-extrabold text-base tracking-tight text-[hsl(var(--foreground))]`,children:`DWC`})]}),(0,j.jsx)(`div`,{className:`hidden md:flex items-center gap-1`,children:lu.map(e=>(0,j.jsx)(`a`,{href:e.href,className:`
+          `,children:[(0,j.jsxs)(`a`,{href:`/`,className:`flex items-center gap-2.5 no-underline shrink-0`,children:[(0,j.jsx)(`img`,{src:cu,alt:`Logo DWC`,className:`w-[30px] h-[30px] object-contain`}),(0,j.jsx)(`span`,{className:`font-display font-extrabold text-base tracking-tight text-[hsl(var(--foreground))]`,children:`DWC`})]}),(0,j.jsx)(`div`,{className:`hidden md:flex items-center gap-1 flex-1`,children:lu.map(e=>(0,j.jsx)(`a`,{href:e.href,className:`
                   text-sm font-medium
                   text-[hsl(var(--foreground-muted))]
                   hover:text-[hsl(var(--foreground))]
@@ -153,23 +153,13 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
                   rounded-md
                   transition-colors
                   no-underline
-                `,children:e.label},e.label))}),(0,j.jsxs)(`div`,{className:`hidden md:flex items-center gap-3`,children:[(0,j.jsx)(ou,{}),r?(0,j.jsx)(`button`,{onClick:i,className:`
-                  bg-[hsl(var(--delete))]
-                  text-[hsl(var(--primary-foreground))]
-                text-sm font-semibold
-                px-4 py-2 rounded-md
-                hover:opacity-90
-                transition-opacity
-                no-underline
-              `,children:`Se déconnecter`}):(0,j.jsx)(`button`,{onClick:()=>e(`/auth`),className:`
-                bg-[hsl(var(--primary))]
+                `,children:e.label},e.label))}),(0,j.jsxs)(`div`,{className:`hidden md:flex items-center gap-3`,children:[(0,j.jsx)(ou,{}),!r&&(0,j.jsxs)(`button`,{onClick:()=>e(`/auth`),className:`     bg-[hsl(var(--primary))]
                 text-[hsl(var(--primary-foreground))]
                 text-sm font-semibold
                 px-4 py-2 rounded-md
                 hover:opacity-90
                 transition-opacity
-                no-underline
-              `,children:`Se connecter`})]}),(0,j.jsx)(`button`,{type:`button`,onClick:()=>n(!0),"aria-label":`Ouvrir le menu`,className:`
+                no-underline`,children:[` `,`Se connecter`]})]}),(0,j.jsx)(`button`,{type:`button`,onClick:()=>n(!0),"aria-label":`Ouvrir le menu`,className:`
               md:hidden
               p-2 rounded-md
               text-[hsl(var(--foreground))]
