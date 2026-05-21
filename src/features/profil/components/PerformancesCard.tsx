@@ -56,7 +56,7 @@ export function PerformancesCard({
   return (
     <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
       <div className="px-6 py-3.5 border-b border-[hsl(var(--border))]">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] font-mono">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-mono">
           Performances · Saison {new Date().getFullYear()}
         </h3>
       </div>

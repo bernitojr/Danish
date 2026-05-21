@@ -101,10 +101,10 @@ export function RecentGamesCard({ games, totalGames }: RecentGamesCardProps) {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-medium text-foreground truncate">
+                  <p className="text-[13px] font-medium text-[hsl(var(--foreground))] truncate">
                     vs. Bot · Partie classée
                   </p>
-                  <p className="text-[11px] text-foreground-muted mt-0.5 tracking-wide">
+                  <p className="text-[11px] text-[hsl(var(--foreground-muted))] mt-0.5 tracking-wide">
                     {dateStr}
                   </p>
                 </div>
