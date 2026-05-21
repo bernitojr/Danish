@@ -1,16 +1,14 @@
-import { Play, ArrowRight } from 'lucide-react';
-import videoDwc from '../../../assets/DWC_V4.webm';
-import videoDwcMp4 from '../../../assets/DWC_V4.mp4';
+import { Play, ArrowRight } from 'lucide-react'
+import videoDwc from '../../../assets/DWC_V4.webm'
+import videoDwcMp4 from '../../../assets/DWC_V4.mp4'
 
 export function Hero() {
   return (
     <section className="relative min-h-[calc(100vh-60px)] flex items-center py-20 overflow-hidden">
       <div className="max-w-[1280px] mx-auto px-8 w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-
           {/* COLONNE GAUCHE — TEXTE */}
           <div className="flex flex-col">
-
             {/* Eyebrow */}
             <div className="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-[hsl(var(--primary))] mb-7">
               Site Officiel · 2026
@@ -36,8 +34,9 @@ export function Hero() {
 
             {/* Subtitle */}
             <p className="text-base text-[hsl(var(--foreground-secondary))] leading-relaxed mb-8 max-w-md">
-              La plateforme officielle du tournoi de cartes annuel.
-              Jeux, règles, classements — tout ce qu'il faut pour la prochaine édition.
+              La plateforme officielle du tournoi de cartes annuel. Jeux,
+              règles, classements — tout ce qu'il faut pour la prochaine
+              édition.
             </p>
 
             {/* Actions */}
@@ -55,9 +54,7 @@ export function Hero() {
                   shadow-lg shadow-[hsl(var(--primary)/0.25)]
                 "
               >
-        
                 <Play size={16} fill="currentColor" />
-
                 Jouer maintenant
               </a>
               <a
@@ -77,7 +74,6 @@ export function Hero() {
                 <ArrowRight size={14} />
               </a>
             </div>
-
           </div>
 
           {/* COLONNE DROITE — VIDÉO */}
@@ -98,17 +94,18 @@ export function Hero() {
                 muted
                 playsInline
                 className="relative z-10 w-[85%] h-[85%] object-contain"
-                  
               >
-          <source src={videoDwcMp4} type='video/mp4; codecs="hvc1" ' style={{ background: 'transparent' }} />
-          <source src={videoDwc} type="video/webm" />
-                
+                <source
+                  src={videoDwcMp4}
+                  type='video/mp4; codecs="hvc1" '
+                  style={{ background: 'transparent' }}
+                />
+                <source src={videoDwc} type="video/webm" />
               </video>
             </div>
           </div>
-
         </div>
       </div>
     </section>
-  );
+  )
 }
