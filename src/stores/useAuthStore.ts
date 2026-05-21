@@ -6,6 +6,7 @@ interface Profile {
   avatar_url: string | null
   role: string
   created_at: string
+  active_title_id: string | null
 }
 
 interface AuthState {

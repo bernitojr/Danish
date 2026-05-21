@@ -10,6 +10,8 @@ type ProfileStats = {
   placements: { 1: number; 2: number; 3: number; 4: number }
   lastPlayedAt: string // date last game
   recentGames: { placement: number; played_at: string }[]
+  unlockedTitles: { title_id: string; name: string; description: string }[]
+  allTitles: { id: string; name: string; description: string }[]
 }
 
 async function fetchGameResults(userId: string) {
@@ -33,6 +35,25 @@ async function fetchPlayerPoints(userId: string) {
   return data?.points ?? 0
 }
 
+async function fetchUnlockedTitles(userId: string) {
+  const { data, error } = await supabase
+    .from('unlocked_titles')
+    .select('title_id, name, description')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  return data
+}
+
+async function fetchAllTitles() {
+  const { data, error } = await supabase
+    .from('titles')
+    .select('id, name, description')
+
+  if (error) throw error
+  return data
+}
+
 export function useProfileStats() {
   const { user } = useAuthStore()
 
@@ -41,9 +62,11 @@ export function useProfileStats() {
     queryFn: async () => {
       if (!user?.id) throw new Error('Non connecté')
 
-      const [results, points] = await Promise.all([
+      const [results, points, unlockedTitles, allTitles] = await Promise.all([
         fetchGameResults(user.id),
         fetchPlayerPoints(user.id),
+        fetchUnlockedTitles(user.id),
+        fetchAllTitles(),
       ])
 
       // calculer totalGames (combien de lignes ?)
@@ -84,6 +107,8 @@ export function useProfileStats() {
           (a, b) =>
             new Date(b.played_at).getTime() - new Date(a.played_at).getTime()
         ),
+        unlockedTitles,
+        allTitles,
       } satisfies ProfileStats
     },
     enabled: !!user?.id,
