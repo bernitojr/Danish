@@ -4,13 +4,13 @@ import { ThemeToggle } from './ThemeToggle'
 import { MobileDrawer } from './MobileDrawer'
 import { useAuthStore } from '@/stores/useAuthStore'
 import logoDwc from '@/assets/logo-DWCV1.png'
-import { useAuth } from '@/hooks/useAuth'
+// import { useAuth } from '@/hooks/useAuth'
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Règles', href: '' },
   { label: 'Jouer', href: '/Danish/game' },
-  { label: 'Classement', href:'' },
+  { label: 'Classement', href: '' },
   { label: 'Profil', href: '/Danish/profile' },
 ]
 
@@ -21,7 +21,7 @@ interface NavProps {
 export function Nav({ onNavigate }: NavProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const { user } = useAuthStore()
-  const { signOut } = useAuth()
+  // const { signOut } = useAuth()
 
   return (
     <>
@@ -35,12 +35,15 @@ export function Nav({ onNavigate }: NavProps) {
         <div
           className="
             max-w-[1280px] mx-auto
-            flex items-center justify-between
+            flex items-center gap-8
             px-8 py-3.5
           "
         >
           {/* BRAND */}
-          <a href="/" className="flex items-center gap-2.5 no-underline">
+          <a
+            href="/"
+            className="flex items-center gap-2.5 no-underline shrink-0"
+          >
             <img
               src={logoDwc}
               alt="Logo DWC"
@@ -52,7 +55,7 @@ export function Nav({ onNavigate }: NavProps) {
           </a>
 
           {/* LIENS DESKTOP — cachés sur mobile */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 flex-1">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.label}
@@ -73,37 +76,20 @@ export function Nav({ onNavigate }: NavProps) {
             ))}
           </div>
 
-          {/* ACTIONS DESKTOP — cachées sur mobile */}
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
-            {user ? (
-              <button
-                onClick={signOut}
-                className="
-                  bg-[hsl(var(--delete))]
-                  text-[hsl(var(--primary-foreground))]
-                text-sm font-semibold
-                px-4 py-2 rounded-md
-                hover:opacity-90
-                transition-opacity
-                no-underline
-              "
-              >
-                Se déconnecter
-              </button>
-            ) : (
+            {!user && (
               <button
                 onClick={() => onNavigate('/auth')}
-                className="
-                bg-[hsl(var(--primary))]
+                className="     bg-[hsl(var(--primary))]
                 text-[hsl(var(--primary-foreground))]
                 text-sm font-semibold
                 px-4 py-2 rounded-md
                 hover:opacity-90
                 transition-opacity
-                no-underline
-              "
+                no-underline"
               >
+                {' '}
                 Se connecter
               </button>
             )}
