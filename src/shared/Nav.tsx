@@ -49,9 +49,6 @@ export function Nav({ onNavigate }: NavProps) {
               alt="Logo DWC"
               className="w-[60px] h-[60px] object-contain"
             />
-            <span className="font-sans font-extrabold text-base tracking-tight text-[hsl(var(--foreground))]">
-              DWC
-            </span>
           </a>
 
           {/* LIENS DESKTOP — cachés sur mobile */}

@@ -56,7 +56,7 @@ export function PerformancesCard({
   return (
     <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
       <div className="px-6 py-3.5 border-b border-[hsl(var(--border))]">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-mono">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-sans">
           Performances · Saison {new Date().getFullYear()}
         </h3>
       </div>
@@ -67,7 +67,7 @@ export function PerformancesCard({
           {placements.map(({ label, count, color, bg, border, sub }) => (
             <div
               key={label}
-              className="rounded-[var(--radius)] p-4 text-center"
+              className="rounded-[var(--radius)] p-2 text-center"
               style={{
                 backgroundColor: bg,
                 border: `1px solid ${border}`,
@@ -80,9 +80,9 @@ export function PerformancesCard({
                 {label}
               </p>
               <p className="font-display font-extrabold text-[2rem] leading-none text-[hsl(var(--foreground))] mb-2">
-                {count}
+                {count}x
               </p>
-              <p className="text-[11px] uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
+              <p className="hidden md:block text-[11px] uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
                 {sub}
               </p>
             </div>

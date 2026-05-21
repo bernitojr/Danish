@@ -32,7 +32,7 @@ export function RecentGamesCard({ games, totalGames }: RecentGamesCardProps) {
           >
             <ChevronLeft className="w-4 h-4 text-[hsl(var(--foreground-muted))]" />
           </button>
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-mono">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-sans">
             Parties récentes
           </h3>
 
@@ -50,7 +50,7 @@ export function RecentGamesCard({ games, totalGames }: RecentGamesCardProps) {
             <ChevronRight className="w-4 h-4 text-[hsl(var(--foreground-muted))]" />
           </button>
         </div>
-        <span className="text-[11px] text-foreground-muted">
+        <span className="text-[10px] font-mono text-foreground-muted">
           {totalGames} partie{totalGames !== 1 ? 's' : ''} jouée
           {totalGames !== 1 ? 's' : ''}
         </span>

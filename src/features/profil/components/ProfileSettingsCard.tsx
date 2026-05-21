@@ -14,7 +14,7 @@ export function ProfileSettingsCard({
       {/* Settings card */}
       <div>
         <div className="px-5 py-3.5 border-b border-[hsl(var(--border))]">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-mono">
+          <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground-muted font-sans">
             Paramètres du compte
           </h3>
         </div>
