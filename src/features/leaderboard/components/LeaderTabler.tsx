@@ -52,7 +52,7 @@ export function LeaderboardTable({
               <button
                 key={btn.value}
                 onClick={() => onSortChange(btn.value)}
-                className={`inline-flex items-center gap-[0.4rem] border-none rounded-[calc(var(--radius)-4px)] py-[0.35rem] px-[0.75rem] font-mono text-[0.65rem] uppercase tracking-[0.1em] cursor-pointer transition-colors duration-150 ${
+                className={`inline-flex items-center gap-[0.4rem] border-none rounded-[calc(var(--radius)-4px)] py-[0.35rem] px-[0.75rem] font-display text-[0.65rem] uppercase tracking-[0.1em] cursor-pointer transition-colors duration-150 ${
                   sortBy === btn.value
                     ? 'bg-[hsl(var(--foreground)/0.08)] text-[hsl(var(--foreground))]'
                     : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--foreground)/0.08)] hover:text-[hsl(var(--foreground))]'
@@ -74,7 +74,7 @@ export function LeaderboardTable({
 
       {/* tableau */}
       <div className="border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
-        <table className="w-full">
+        <table className="w-full bg-[hsl(var(--card))]">
           <thead>
             <tr className="border-b border-[hsl(var(--border))]">
               <th className="py-3 px-4 text-left font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))] w-12">

@@ -19,6 +19,7 @@ export function LeaderboardPage() {
       .sort((a, b) => b[sortBy] - a[sortBy])
       .map((entry, index) => [entry.user_id, index + 1])
   )
+  const margins = ['mb-4', 'mb-8', 'mb-2']
   return (
     // container
     <div className="max-w-[1280px] mx-auto px-8 w-full">
@@ -112,7 +113,7 @@ export function LeaderboardPage() {
             if (!entry) return <div key={i} />
             const rank = i === 0 ? 2 : i === 1 ? 1 : 3
             return (
-              <div key={entry.user_id} className={i === 1 ? 'mb-4' : ''}>
+              <div key={entry.user_id} className={margins[i] ?? ''}>
                 <PodiumCard entry={entry} rank={rank as 1 | 2 | 3} />
               </div>
             )
