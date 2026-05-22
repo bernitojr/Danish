@@ -4,13 +4,13 @@ import { Hero } from './Hero'
 import { QuickAccessCards } from './QuickAccessCard'
 
 export function LandingPage() {
-  const store = useGameStore()
+  // const store = useGameStore()
   const navigate = useNavigate()
 
   return (
     <div>
       <Hero />
-      <QuickAccessCards onNavigate={navigate} />
+      <QuickAccessCards />
     </div>
   )
 }

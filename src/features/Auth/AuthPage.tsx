@@ -14,7 +14,7 @@ function getCardBoxShadow(mode: 'login' | 'signup'): string {
   `
 }
 
-export function AuthPage({ onNavigate }: AuthPageProps) {
+export function AuthPage() {
   const navigate = useNavigate()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [username, setUsername] = useState('')
