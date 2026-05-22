@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
+import { Link } from 'react-router-dom'
 import type { User } from '@supabase/supabase-js'
 
 interface NavLink {
@@ -14,7 +15,6 @@ interface MobileDrawerProps {
   onClose: () => void
   links: NavLink[]
   user: User | null
-  onNavigate: (path: string) => void
 }
 
 export function MobileDrawer({
@@ -22,7 +22,6 @@ export function MobileDrawer({
   onClose,
   links,
   user,
-  onNavigate,
 }: MobileDrawerProps) {
   // Fermeture sur touche Escape
   useEffect(() => {
@@ -99,9 +98,9 @@ export function MobileDrawer({
         {/* Liens de navigation */}
         <nav className="flex flex-col p-4 gap-1 flex-1">
           {links.map((link) => (
-            <a
+            <Link
               key={link.label}
-              href={link.href}
+              to={link.href}
               onClick={onClose}
               className="
                 px-4 py-3 rounded-md
@@ -114,7 +113,7 @@ export function MobileDrawer({
               "
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -122,12 +121,9 @@ export function MobileDrawer({
         <div className="flex flex-col gap-3 p-4 border-t border-[hsl(var(--border))]">
           <ThemeToggle />
           {!user && (
-            <a
-              href="#"
-              onClick={() => {
-                onClose()
-                onNavigate('/auth')
-              }}
+            <Link
+              to="/auth"
+              onClick={onClose}
               className="
               inline-flex items-center justify-center
               bg-[hsl(var(--primary))]
@@ -140,7 +136,7 @@ export function MobileDrawer({
             "
             >
               Se connecter
-            </a>
+            </Link>
           )}
         </div>
       </aside>

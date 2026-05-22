@@ -1,31 +1,20 @@
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from 'sonner'
 import { GameBoard } from '@/features/game/components/GameBoard'
 import { LandingPage } from '@/features/landing/components/LandingPage'
-import { useGameStore } from '@/features/game/store/gameStore'
-import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/useAuthStore'
 import { AuthPage } from './features/Auth/AuthPage'
-import { useTheme } from './features/profil/hooks/useTheme'
 import { ProfilePage } from './features/profil/components/ProfilePage'
 import { LeaderboardPage } from './features/leaderboard/pages/LeaderboardPage'
 import { Nav } from './shared/Nav'
-import { Toaster } from 'sonner'
-// import { Nav } from './shared/components/Nav'
+import { useTheme } from './features/profil/hooks/useTheme'
+import { useAuthStore } from './stores/useAuthStore'
+import { useGameStore } from '@/features/game/store/gameStore'
+import { supabase } from '@/lib/supabase'
+import { useEffect } from 'react'
 
-function Layout({
-  children,
-  onNavigate,
-}: {
-  children: React.ReactNode
-  onNavigate: (to: string) => void
-}) {
-  return (
-    <div>
-      <Nav onNavigate={onNavigate} />
-      <main>{children}</main>
-    </div>
-  )
-}
+const queryClient = new QueryClient()
 
 const DebugPage = import.meta.env.DEV
   ? lazy(() =>
@@ -35,26 +24,37 @@ const DebugPage = import.meta.env.DEV
     )
   : null
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuthStore()
+  if (isLoading) return null
+  if (!user) return <Navigate to="/auth" replace />
+  return <>{children}</>
+}
+
 function GameRoute() {
   const { gameState, startGame, difficulty } = useGameStore()
-
   useEffect(() => {
     if (!gameState) startGame('You', difficulty)
   }, [])
-
   return <GameBoard />
 }
 
-function App() {
-  useTheme()
-  const [path, setPath] = useState(window.location.pathname)
+function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <div>
+      <Nav />
+      <main>{children}</main>
+    </div>
+  )
+}
 
-  const { setUser, setProfile, setIsLoading, isLoading, user } = useAuthStore()
+function AppContent() {
+  useTheme()
+  const { setUser, setProfile, setIsLoading } = useAuthStore()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null)
-
       if (session?.user) {
         supabase
           .from('profiles')
@@ -72,49 +72,68 @@ function App() {
     })
   }, [])
 
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
-
-  function navigate(to: string) {
-    const url = import.meta.env.BASE_URL.replace(/\/$/, '') + to
-    history.pushState({}, '', url)
-    setPath(url)
-  }
-
-  const base = import.meta.env.BASE_URL
-  const cleanPath = path.replace(base.replace(/\/$/, ''), '') || '/'
-
-  if (cleanPath === '/auth') return <AuthPage onNavigate={navigate} />
-
   return (
     <>
       <Toaster position="bottom-right" richColors />
-      <Layout onNavigate={navigate}>
-        {cleanPath === '/game' && <GameRoute />}
-        {cleanPath === '/profile' &&
-          (isLoading ? null : !user ? (
-            (navigate('/auth'), null)
-          ) : (
-            <ProfilePage />
-          ))}
-        {cleanPath === '/leaderboard' &&
-          (isLoading ? null : !user ? (
-            (navigate('/auth'), null)
-          ) : (
-            <LeaderboardPage />
-          ))}
-        {cleanPath === '/debug' && DebugPage && (
-          <Suspense fallback={null}>
-            <DebugPage />
-          </Suspense>
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <LandingPage />
+            </Layout>
+          }
+        />
+        <Route
+          path="/game"
+          element={
+            <Layout>
+              <GameRoute />
+            </Layout>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        {DebugPage && (
+          <Route
+            path="/debug"
+            element={
+              <Suspense fallback={null}>
+                <DebugPage />
+              </Suspense>
+            }
+          />
         )}
-        {cleanPath === '/' && <LandingPage onNavigate={navigate} />}
-      </Layout>
+      </Routes>
     </>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter basename="/Danish">
+        <AppContent />
+      </BrowserRouter>
+    </QueryClientProvider>
+  )
+}

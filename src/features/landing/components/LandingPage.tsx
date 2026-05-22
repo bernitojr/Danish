@@ -1,24 +1,18 @@
-// import { useTheme } from './hooks/useTheme';
-// import { ThemeToggle } from './components/ThemeToggle';
+import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../../game/store/gameStore'
 import { Hero } from './Hero'
 import { QuickAccessCards } from './QuickAccessCard'
-export function LandingPage({
-  onNavigate,
-}: {
-  onNavigate: (path: string) => void
-}) {
-  const store = useGameStore()
-  console.log('Game store state on landing page:', store)
 
-  // const { theme, toggleTheme } = useTheme();
-  //    console.log('Current theme:', theme);
+export function LandingPage() {
+  const store = useGameStore()
+  const navigate = useNavigate()
+
+  console.log('hello store', store)
 
   return (
     <div>
-      {/* <Nav onNavigate={onNavigate} /> */}
       <Hero />
-      <QuickAccessCards onNavigate={onNavigate} />
+      <QuickAccessCards onNavigate={navigate} />
     </div>
   )
 }

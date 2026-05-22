@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { AlertCircle, User, Lock } from 'lucide-react'
-
-interface AuthPageProps {
-  onNavigate: (path: string) => void
-}
+import { useNavigate } from 'react-router-dom'
 
 // login → --primary (vert), signup → --accent (autre couleur)
 // La shadow est toujours visible (pas de hover), elle change de couleur avec le mode
@@ -18,6 +15,7 @@ function getCardBoxShadow(mode: 'login' | 'signup'): string {
 }
 
 export function AuthPage({ onNavigate }: AuthPageProps) {
+  const navigate = useNavigate()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -45,7 +43,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
       } else {
         await signUp(username, password)
       }
-      onNavigate('/')
+      navigate('/')
     } catch {
       setError('Identifiants incorrects.')
     } finally {

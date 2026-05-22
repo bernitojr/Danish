@@ -1,27 +1,23 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { ThemeToggle } from './ThemeToggle'
 import { MobileDrawer } from './MobileDrawer'
 import { useAuthStore } from '@/stores/useAuthStore'
 import logoDwc from '@/assets/logo-DWCV1.png'
-// import { useAuth } from '@/hooks/useAuth'
 
 const NAV_LINKS = [
-  { label: 'Home', href: '/Danish/' },
-  { label: 'Règles', href: '' },
-  { label: 'Jouer', href: '/Danish/game' },
-  { label: 'Classement', href: '/Danish/leaderboard' },
-  { label: 'Profil', href: '/Danish/profile' },
+  { label: 'Home', href: '/' },
+  { label: 'Règles', href: '/rules' },
+  { label: 'Jouer', href: '/game' },
+  { label: 'Classement', href: '/leaderboard' },
+  { label: 'Profil', href: '/profile' },
 ]
 
-interface NavProps {
-  onNavigate: (path: string) => void
-}
-
-export function Nav({ onNavigate }: NavProps) {
+export function Nav() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const { user } = useAuthStore()
-  // const { signOut } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <>
@@ -54,9 +50,9 @@ export function Nav({ onNavigate }: NavProps) {
           {/* LIENS DESKTOP — cachés sur mobile */}
           <div className="hidden md:flex items-center gap-1 flex-1">
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                to={link.href}
                 className="
                   text-sm font-medium
                   text-[hsl(var(--foreground-muted))]
@@ -69,7 +65,7 @@ export function Nav({ onNavigate }: NavProps) {
                 "
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -77,7 +73,7 @@ export function Nav({ onNavigate }: NavProps) {
             <ThemeToggle />
             {!user && (
               <button
-                onClick={() => onNavigate('/auth')}
+                onClick={() => navigate('/auth')}
                 className="     bg-[hsl(var(--primary))]
                 text-[hsl(var(--primary-foreground))]
                 text-sm font-semibold
@@ -116,7 +112,6 @@ export function Nav({ onNavigate }: NavProps) {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         links={NAV_LINKS}
-        onNavigate={onNavigate}
         user={user}
       />
     </>

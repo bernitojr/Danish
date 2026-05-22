@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FileText, Play, User, ArrowRight } from 'lucide-react'
 import { useGameStore } from '@/features/game/store/gameStore'
 import type { BotDifficulty } from '@/features/game/utils/types'
+import { useNavigate } from 'react-router-dom'
 
 const STATIC_CARDS = [
   {
@@ -52,11 +53,8 @@ const DIFFICULTY_LEVELS: {
   },
 ]
 
-interface QuickAccessCardsProps {
-  onNavigate: (path: string) => void
-}
-
-export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
+export function QuickAccessCards() {
+  const navigate = useNavigate()
   const { setDifficulty } = useGameStore()
   const [diffIndex, setDiffIndex] = useState(0)
   const currentDiff = DIFFICULTY_LEVELS[diffIndex]!
@@ -66,7 +64,7 @@ export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
 
   function handlePlay() {
     setDifficulty(currentDiff.value)
-    onNavigate('/game')
+    navigate('/game')
   }
 
   return (
@@ -84,7 +82,7 @@ export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
           {/* Card 1 — Règles */}
           <CardStatic
             data={STATIC_CARDS[0]!}
-            onClick={() => onNavigate(STATIC_CARDS[0]!.onClickPath)}
+            onClick={() => navigate(STATIC_CARDS[0]!.onClickPath)}
           />
 
           {/* Card 2 — Jouer (interactive) */}
@@ -99,7 +97,7 @@ export function QuickAccessCards({ onNavigate }: QuickAccessCardsProps) {
           {/* Card 3 — Profil */}
           <CardStatic
             data={STATIC_CARDS[1]!}
-            onClick={() => onNavigate(STATIC_CARDS[1]!.onClickPath)}
+            onClick={() => navigate(STATIC_CARDS[1]!.onClickPath)}
           />
         </div>
       </div>
