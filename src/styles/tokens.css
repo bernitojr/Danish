@@ -5,7 +5,7 @@
   --dwc-mauve:230 53% 64%;    /* bleu foncé */
   --dwc-turquoise: 153 80% 57%;  
   --dwc-grey-blue: 223 22% 67%;   
-  --dwc-purple :291, 61%, 39%;
+  --dwc-purple :282 100% 37.3%;
 
 
 
@@ -26,7 +26,7 @@
   --foreground-muted: 0 0% 70%;
   --foreground-contrast: 0 0% 10%;
   --card: 0 0% 15%;
-  /* --card-foreground: 0 0% 95%; pas pour l'instant, on verra si besoin */
+  --card-foreground: 0 0% 95%;
   --border: 0 0% 30%;
   --primary: var(--dwc-mauve);
   --primary-foreground: 0 0% 99%;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, Play, User, ArrowRight } from 'lucide-react'
+import { FileText, Play, User, ArrowRight, Trophy } from 'lucide-react'
 import { useGameStore } from '@/features/game/store/gameStore'
 import type { BotDifficulty } from '@/features/game/utils/types'
 import { useNavigate } from 'react-router-dom'
@@ -28,6 +28,16 @@ const STATIC_CARDS = [
     footer: 'Voir mon profil',
     href: '#',
     onClickPath: '/profile',
+  },
+  {
+    tag: 'Classement',
+    title: 'Classement',
+    description: 'Consulte le classement officiel.',
+    icon: Trophy,
+    accentVar: '--gold',
+    footer: 'Voir le classement',
+    href: '#',
+    onClickPath: '/leaderboard',
   },
 ]
 
@@ -98,6 +108,11 @@ export function QuickAccessCards() {
           <CardStatic
             data={STATIC_CARDS[1]!}
             onClick={() => navigate(STATIC_CARDS[1]!.onClickPath)}
+          />
+          {/* Card 4 Classement */}
+          <CardStatic
+            data={STATIC_CARDS[2]!}
+            onClick={() => navigate(STATIC_CARDS[2]!.onClickPath)}
           />
         </div>
       </div>
