@@ -26,7 +26,7 @@ export function LeaderboardTable({
   const currentUserId = user?.id
 
   return (
-    <div>
+    <div className="mb-8">
       {/* barre recherche + filtres */}
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div className="flex items-center gap-[0.625rem] flex-wrap">

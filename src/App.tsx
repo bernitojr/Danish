@@ -9,6 +9,7 @@ import { ProfilePage } from './features/profil/components/ProfilePage'
 import { PublicProfilePage } from './features/profil/components/PublicProfilePage'
 import { LeaderboardPage } from './features/leaderboard/pages/LeaderboardPage'
 import { Nav } from './shared/Nav'
+import { Footer } from './shared/Footer'
 import { useTheme } from './features/profil/hooks/useTheme'
 import { useAuthStore } from './stores/useAuthStore'
 import { useGameStore } from '@/features/game/store/gameStore'
@@ -42,9 +43,10 @@ function GameRoute() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div>
+    <div className="flex flex-col min-h-screen">
       <Nav />
-      <main>{children}</main>
+      <main className="flex-1">{children}</main>
+      <Footer />
     </div>
   )
 }
