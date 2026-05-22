@@ -7,8 +7,6 @@ export function LandingPage() {
   const store = useGameStore()
   const navigate = useNavigate()
 
-  console.log('hello store', store)
-
   return (
     <div>
       <Hero />

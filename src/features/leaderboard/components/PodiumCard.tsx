@@ -1,4 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import type { LeaderboardEntry } from '../hooks/useLeaderboard'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 interface PodiumCardProps {
   entry: LeaderboardEntry
@@ -31,9 +33,19 @@ export function PodiumCard({ entry, rank }: PodiumCardProps) {
   }
   const r = rankClass[rank]
   const initials = entry.username.slice(0, 2).toUpperCase()
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const currentUserId = user?.id
 
   return (
     <div
+      onClick={() => {
+        if (entry.user_id === currentUserId) {
+          navigate('/profile')
+        } else {
+          navigate(`/profile/${entry.user_id}`)
+        }
+      }}
       className={`relative border rounded-[calc(var(--radius)+4px)] pt-[1.75rem] px-[1.25rem] pb-[1.25rem] text-center overflow-hidden hover:-translate-y-1 transition-transform duration-300 ease-in-out ${r.card}`}
     >
       <div

@@ -113,6 +113,14 @@ function AppContent() {
             </Layout>
           }
         />
+        <Route
+          path="/profile/:userId"
+          element={
+            <Layout>
+              <ProtectedRoute>{/* <PublicProfilePage /> */}</ProtectedRoute>
+            </Layout>
+          }
+        />
         {DebugPage && (
           <Route
             path="/debug"

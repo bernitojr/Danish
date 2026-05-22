@@ -1,6 +1,8 @@
 import { Search } from 'lucide-react'
 import type { LeaderboardEntry, SortBy } from '../hooks/useLeaderboard'
 import { ProgressBar } from '@/shared/WinRateProgressBar'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 interface LeaderboardTableProps {
   data: LeaderboardEntry[]
@@ -19,6 +21,10 @@ export function LeaderboardTable({
   onSortChange,
   rankMap,
 }: LeaderboardTableProps) {
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const currentUserId = user?.id
+
   return (
     <div>
       {/* barre recherche + filtres */}
@@ -125,6 +131,13 @@ export function LeaderboardTable({
               return (
                 <tr
                   key={entry.user_id}
+                  onClick={() => {
+                    if (entry.user_id === currentUserId) {
+                      navigate('/profile')
+                    } else {
+                      navigate(`/profile/${entry.user_id}`)
+                    }
+                  }}
                   className="border-b border-[hsl(var(--border)/0.5)] hover:bg-[hsl(var(--background-dark))] transition-colors cursor-pointer last:border-0"
                 >
                   <td className="py-3 px-4 w-12">
@@ -160,7 +173,7 @@ export function LeaderboardTable({
                         <p className="text-sm font-semibold text-[hsl(var(--foreground))]">
                           {entry.username}
                         </p>
-                        <p className="text-xs text-[hsl(var(--foreground-muted))] font-display">
+                        <p className="text-xs text-[hsl(var(--foreground-muted))] font-sans">
                           {entry.active_title ??
                             `#DWC-${new Date().getFullYear()}`}
                         </p>
