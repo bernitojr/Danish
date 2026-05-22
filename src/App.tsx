@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { AuthPage } from './features/Auth/AuthPage'
 import { useTheme } from './features/profil/hooks/useTheme'
 import { ProfilePage } from './features/profil/components/ProfilePage'
+import { LeaderboardPage } from './features/leaderboard/pages/LeaderboardPage'
 import { Nav } from './shared/Nav'
 import { Toaster } from 'sonner'
 // import { Nav } from './shared/components/Nav'
@@ -98,6 +99,12 @@ function App() {
             (navigate('/auth'), null)
           ) : (
             <ProfilePage />
+          ))}
+        {cleanPath === '/leaderboard' &&
+          (isLoading ? null : !user ? (
+            (navigate('/auth'), null)
+          ) : (
+            <LeaderboardPage />
           ))}
         {cleanPath === '/debug' && DebugPage && (
           <Suspense fallback={null}>

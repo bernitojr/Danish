@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { label: 'Home', href: '/Danish/' },
   { label: 'Règles', href: '' },
   { label: 'Jouer', href: '/Danish/game' },
-  { label: 'Classement', href: '' },
+  { label: 'Classement', href: '/Danish/leaderboard' },
   { label: 'Profil', href: '/Danish/profile' },
 ]
 
