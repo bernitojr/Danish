@@ -83,25 +83,16 @@ export function LeaderboardPage() {
     text-[hsl(var(--foreground-muted))]
   "
         >
-          {/* bille verte */}
-          <span
-            className="
-    w-[6px]
-    h-[6px]
-    rounded-full
-    bg-[hsl(var(--accent))]
-    animate-[blink_2s_ease-in-out_infinite]
-  "
-          ></span>
-
           <span
             className="
     text-[hsl(var(--foreground))]
     font-semibold
   "
           >
-            <strong>{data.reduce((acc, e) => acc + e.total_games, 0)}</strong>{' '}
-            parties · <strong>{data.length}</strong> joueurs
+            <strong>
+              {allData.reduce((acc, e) => acc + e.total_games, 0)}
+            </strong>{' '}
+            parties · <strong>{allData.length}</strong> joueurs
           </span>
         </div>
       </div>
