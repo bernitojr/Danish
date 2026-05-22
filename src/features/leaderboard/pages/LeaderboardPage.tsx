@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLeaderboard } from '../hooks/useLeaderboard'
+import { useLeaderboard, type SortBy } from '../hooks/useLeaderboard'
 import { PodiumCard } from '../components/PodiumCard'
 
 export function LeaderboardPage() {
@@ -16,7 +16,7 @@ export function LeaderboardPage() {
 
   return (
     // container
-    <div className="max-w[1280px] mx-auto px-8 py-12">
+    <div className="max-w-[1280px] mx-auto px-8 w-full">
       {/* header */}
       <div
         className="
@@ -122,6 +122,8 @@ export function LeaderboardPage() {
     relative
     my-4
     mb-12
+    max-w-[900px]
+    mx-auto
   "
       >
         <div className="grid grid-cols-3 gap-4 items-end mb-12">
@@ -129,11 +131,9 @@ export function LeaderboardPage() {
             if (!entry) return <div key={i} />
             const rank = i === 0 ? 2 : i === 1 ? 1 : 3
             return (
-              <PodiumCard
-                key={entry.user_id}
-                entry={entry}
-                rank={rank as 1 | 2 | 3}
-              />
+              <div key={entry.user_id} className={i === 1 ? 'mb-4' : ''}>
+                <PodiumCard entry={entry} rank={rank as 1 | 2 | 3} />
+              </div>
             )
           })}
         </div>
