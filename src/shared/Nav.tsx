@@ -41,7 +41,7 @@ export function Nav({ onNavigate }: NavProps) {
         >
           {/* BRAND */}
           <a
-            href="/"
+            href="/Danish/"
             className="flex items-center gap-2.5 no-underline shrink-0"
           >
             <img
