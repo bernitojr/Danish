@@ -8,8 +8,8 @@ interface ProfileIdentityCardProps {
   points: number
   activeTitle: string | null
   unlockedTitles: { title_id: string; name: string; description: string }[]
-  onAvatarClick: () => void
-  onTitleChange: (titleId: string | null) => void
+  onAvatarClick?: () => void
+  onTitleChange?: (titleId: string | null) => void
   allTitles: { id: string; name: string; description: string }[]
 }
 
@@ -44,12 +44,14 @@ export function ProfileIdentityCard({
       />
 
       <div className="px-6 py-4 flex flex-col gap-4">
-        <TitleSelect
-          activeTitle={activeTitle}
-          allTitles={allTitles}
-          unlockedTitles={unlockedTitles}
-          onTitleChange={onTitleChange}
-        />
+        {onTitleChange && (
+          <TitleSelect
+            activeTitle={activeTitle}
+            allTitles={allTitles}
+            unlockedTitles={unlockedTitles}
+            onTitleChange={onTitleChange}
+          />
+        )}
         {/* Points + tag */}
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-1.5 bg-[hsl(var(--primary)/0.12)] border border-[hsl(var(--primary)/0.25)] text-[hsl(var(--primary))] text-sm font-semibold px-3 py-1 rounded-full">

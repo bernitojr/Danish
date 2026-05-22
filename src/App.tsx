@@ -6,6 +6,7 @@ import { GameBoard } from '@/features/game/components/GameBoard'
 import { LandingPage } from '@/features/landing/components/LandingPage'
 import { AuthPage } from './features/Auth/AuthPage'
 import { ProfilePage } from './features/profil/components/ProfilePage'
+import { PublicProfilePage } from './features/profil/components/PublicProfilePage'
 import { LeaderboardPage } from './features/leaderboard/pages/LeaderboardPage'
 import { Nav } from './shared/Nav'
 import { useTheme } from './features/profil/hooks/useTheme'
@@ -104,20 +105,22 @@ function AppContent() {
           }
         />
         <Route
+          path="/profile/:userId"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <PublicProfilePage />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
           path="/profile"
           element={
             <Layout>
               <ProtectedRoute>
                 <ProfilePage />
               </ProtectedRoute>
-            </Layout>
-          }
-        />
-        <Route
-          path="/profile/:userId"
-          element={
-            <Layout>
-              <ProtectedRoute>{/* <PublicProfilePage /> */}</ProtectedRoute>
             </Layout>
           }
         />
