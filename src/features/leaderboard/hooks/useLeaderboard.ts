@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { useQuery } from '@tanstack/react-query'
 
-export type SortBy = 'points' | 'win' | 'total_games' | 'winRate'
+export type SortBy = 'points' | 'wins' | 'total_games' | 'winRate'
 
 export type LeaderboardEntry = {
   user_id: string
@@ -14,6 +14,7 @@ export type LeaderboardEntry = {
   p3: number
   p4: number
   winRate: number
+  active_title: string | null
 }
 
 async function fetchLeaderboard() {
@@ -44,5 +45,5 @@ export function useLeaderboard(search: string, sortBy: SortBy) {
     )
     .sort((a, b) => b[sortBy] - a[sortBy])
 
-  return { ...query, data: filtered }
+  return { ...query, data: filtered, allData: query.data ?? [] }
 }

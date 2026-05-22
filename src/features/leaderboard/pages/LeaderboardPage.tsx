@@ -1,19 +1,24 @@
 import { useState } from 'react'
 import { useLeaderboard, type SortBy } from '../hooks/useLeaderboard'
 import { PodiumCard } from '../components/PodiumCard'
+import { LeaderboardTable } from '../components/LeaderTabler'
 
 export function LeaderboardPage() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('points')
-  const { data, isLoading, error } = useLeaderboard(search, sortBy)
+  const { data, allData, isLoading, error } = useLeaderboard(search, sortBy)
 
   if (isLoading) return null
   if (error) return <div>Erreur: {error.message}</div>
 
   const top3 = data.slice(0, 3)
-  const rest = data
   const podiumOrder = [top3[1], top3[0], top3[2]]
 
+const rankMap = new Map(
+  [...allData]
+    .sort((a, b) => b[sortBy] - a[sortBy])
+    .map((entry, index) => [entry.user_id, index + 1])
+)
   return (
     // container
     <div className="max-w-[1280px] mx-auto px-8 w-full">
@@ -138,6 +143,15 @@ export function LeaderboardPage() {
           })}
         </div>
       </div>
+
+      <LeaderboardTable
+        data={data}
+        search={search}
+        sortBy={sortBy}
+        onSearchChange={setSearch}
+        onSortChange={setSortBy}
+        rankMap={rankMap}
+      />
     </div>
   )
 }
