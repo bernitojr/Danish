@@ -11,21 +11,21 @@ export function PodiumCard({ entry, rank }: PodiumCardProps) {
       card: 'bg-[hsl(var(--gold)/0.25)] border-[hsl(var(--gold))]',
       badge: 'bg-[hsl(var(--gold)/0.15)] text-[hsl(var(--gold))]',
       avatar:
-        'bg-[hsl(var(--gold)/0.15)] text-[hsl(var(--gold))] border-[hsl(var(--gold)/0.4)]',
+        'bg-[hsl(var(--gold)/0.15)] text-[hsl(var(--gold))] border-[hsl(var(--gold))]',
       text: 'text-[hsl(var(--gold))]',
     },
     2: {
       card: 'bg-[hsl(var(--silver)/0.35)] border-[hsl(var(--silver))]',
       badge: 'bg-[hsl(var(--silver)/0.15)] text-[hsl(var(--silver))]',
       avatar:
-        'bg-[hsl(var(--silver)/0.15)] text-[hsl(var(--silver))] border-[hsl(var(--silver)/0.4)]',
+        'bg-[hsl(var(--silver)/0.15)] text-[hsl(var(--silver))] border-[hsl(var(--silver))]',
       text: 'text-[hsl(var(--silver))]',
     },
     3: {
       card: 'bg-[hsl(var(--bronze)/0.25)] border-[hsl(var(--bronze))]',
       badge: 'bg-[hsl(var(--bronze)/0.15)] text-[hsl(var(--bronze))]',
       avatar:
-        'bg-[hsl(var(--bronze)/0.15)] text-[hsl(var(--bronze))] border-[hsl(var(--bronze)/0.4)]',
+        'bg-[hsl(var(--bronze)/0.15)] text-[hsl(var(--bronze))] border-[hsl(var(--bronze))]',
       text: 'text-[hsl(var(--bronze))]',
     },
   }
