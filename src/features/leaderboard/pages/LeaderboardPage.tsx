@@ -14,11 +14,11 @@ export function LeaderboardPage() {
   const top3 = data.slice(0, 3)
   const podiumOrder = [top3[1], top3[0], top3[2]]
 
-const rankMap = new Map(
-  [...allData]
-    .sort((a, b) => b[sortBy] - a[sortBy])
-    .map((entry, index) => [entry.user_id, index + 1])
-)
+  const rankMap = new Map(
+    [...allData]
+      .sort((a, b) => b[sortBy] - a[sortBy])
+      .map((entry, index) => [entry.user_id, index + 1])
+  )
   return (
     // container
     <div className="max-w-[1280px] mx-auto px-8 w-full">
@@ -40,40 +40,25 @@ const rankMap = new Map(
     block
   "
         >
-          {/* page eyebrow  */}
-          <div
-            className="
-    flex
-    items-center
-    gap-3
-    font-mono
-    text-[0.7rem]
-    text-[hsl(var(--accent))]
-    uppercase
-    tracking-[0.2em]
-    mb-3
-  "
-          >
-            Saison {new Date().getFullYear()}
-          </div>
           <h1
             className="
     font-display
     font-extrabold
     text-[clamp(2rem,4vw,3.25rem)]
+    text-[hsl(var(--foreground))]
     tracking-[-0.04em]
-    leading-[1]
+   
   "
           >
-            Classement{' '}
+            Hall of fame
             <span
               className="
-    bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(var(--primary)))]
+       bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(var(--primary)))]
     bg-clip-text
-    text-transparent
-  "
+    text-transparent"
             >
-              général
+              {' '}
+              {new Date().getFullYear()}
             </span>
           </h1>
 

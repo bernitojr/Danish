@@ -2,14 +2,17 @@
 :root {
   /* ── Couche 1: Tokens primitifs (palette de marque) ── */
   /* Ces valeurs ne changent JAMAIS selon le thème */
-  --dwc-mauve:230 53% 64%; 
+  --dwc-mauve:230 53% 64%;    /* bleu foncé */
   --dwc-turquoise: 153 80% 57%;  
   --dwc-grey-blue: 223 22% 67%;   
+  --dwc-purple :291, 61%, 39%;
+
+
 
   /* ── Couche 2: Typographie ── */
   --font-sans: "Inter", sans-serif;      
   --font-display: "Montserrat", sans-serif;   
-  /* --font-mono: "Fraunces", serif;      */
+  --font-mono: "Fraunces", serif;     
   
   /* ── Couche 2: Rayons & autres ── */
   --radius: 0.5rem;
@@ -27,6 +30,7 @@
   --border: 0 0% 30%;
   --primary: var(--dwc-mauve);
   --primary-foreground: 0 0% 99%;
+  --secondary: var(--dwc-purple);
   --accent: var(--dwc-turquoise);
   --ring: var(--dwc-mauve);
   --shadow-color: 0 0% 0% / 0.5;

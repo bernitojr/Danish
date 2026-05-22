@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react'
 import type { LeaderboardEntry, SortBy } from '../hooks/useLeaderboard'
+import { ProgressBar } from '@/shared/WinRateProgressBar'
 
 interface LeaderboardTableProps {
   data: LeaderboardEntry[]
@@ -21,205 +22,50 @@ export function LeaderboardTable({
   return (
     <div>
       {/* barre recherche + filtres */}
-      <div
-        className="
-    flex
-    items-center
-    justify-between
-    gap-4
-    mb-4
-    flex-wrap
-  "
-      >
-        {/* gauche  */}
-        <div
-          className="
-    flex
-    items-center
-    gap-[0.625rem]
-    flex-wrap
-  "
-        >
-          {/* searchbar */}
+      <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+        <div className="flex items-center gap-[0.625rem] flex-wrap">
           <div className="relative">
-            <Search
-              className="
-      absolute
-      left-3
-      top-1/2
-      -translate-y-1/2
-      w-[14px]
-      h-[14px]
-      text-[hsl(var(--foreground-muted))]
-      pointer-events-none
-    "
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[14px] h-[14px] text-[hsl(var(--foreground-muted))] pointer-events-none" />
             <input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search a player"
-              className="
-    bg-[hsl(var(--card))]
-    border
-    border-[hsl(var(--border))]
-    rounded-[var(--radius)]
-    py-2
-    pr-[0.875rem]
-    pl-[2.25rem]
-    font-sans
-    text-[0.8125rem]
-    text-[hsl(var(--foreground))]
-    outline-none
-    w-[220px]
-    transition-colors
-    duration-200
-
-    focus:border-[hsl(var(--primary))]
-    focus:outline-none
-    focus:ring-0
-  "
+              placeholder="Rechercher un joueur"
+              className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] py-2 pr-[0.875rem] pl-[2.25rem] font-sans text-[0.8125rem] text-[hsl(var(--foreground))] outline-none w-[220px] transition-colors duration-200 focus:border-[hsl(var(--primary))] focus:outline-none focus:ring-0"
             />
           </div>
-          {/* btn de filtre */}
-          <div
-            className="
-    flex
-    items-center
-    gap-[0.4rem]
-    bg-[hsl(var(--card))]
-    border border-[hsl(var(--border))]
-    rounded-[var(--radius)]
-    p-[3px]
-  "
-          >
-            {/* btn points */}
-            <button
-              onClick={() => onSortChange('points')}
-              className={`
-    inline-flex
-    items-center
-    gap-[0.4rem]
-    bg-transparent
-    border-none
-    rounded-[calc(var(--radius)-4px)]
-    py-[0.35rem]
-    px-[0.75rem]
-    font-mono
-    text-[0.65rem]
-    uppercase
-    tracking-[0.1em]
-    text-[hsl(var(--foreground-muted))]
-    cursor-pointer
-    transition-colors
-    duration-150
 
-    hover:bg-[hsl(var(--card)/0.5)]
-hover:text-[hsl(var(--foreground))]... ${sortBy === 'points' ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]' : ''}`}
-            >
-              Points
-            </button>
-            {/* btn victoires */}
-            <button
-              onClick={() => onSortChange('wins')}
-              className={`
-    inline-flex
-    items-center
-    gap-[0.4rem]
-    bg-transparent
-    border-none
-    rounded-[calc(var(--radius)-4px)]
-    py-[0.35rem]
-    px-[0.75rem]
-    font-mono
-    text-[0.65rem]
-    uppercase
-    tracking-[0.1em]
-    text-[hsl(var(--foreground-muted))]
-    cursor-pointer
-    transition-colors
-    duration-150
-
-    hover:bg-[hsl(var(--card)/0.5)]
-hover:text-[hsl(var(--foreground))]... ${sortBy === 'wins' ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]' : ''}`}
-            >
-              Victoires
-            </button>
-            {/* btn games */}
-            <button
-              onClick={() => onSortChange('total_games')}
-              className={`
-    inline-flex
-    items-center
-    gap-[0.4rem]
-    bg-transparent
-    border-none
-    rounded-[calc(var(--radius)-4px)]
-    py-[0.35rem]
-    px-[0.75rem]
-    font-mono
-    text-[0.65rem]
-    uppercase
-    tracking-[0.1em]
-    text-[hsl(var(--foreground-muted))]
-    cursor-pointer
-    transition-colors
-    duration-150
-
-    hover:bg-[hsl(var(--card)/0.5)]
-hover:text-[hsl(var(--foreground))]... ${sortBy === 'total_games' ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]' : ''}`}
-            >
-              Parties
-            </button>
-            {/* btn win rate */}
-            <button
-              onClick={() => onSortChange('winRate')}
-              className={`
-    inline-flex
-    items-center
-    gap-[0.4rem]
-    bg-transparent
-    border-none
-    rounded-[calc(var(--radius)-4px)]
-    py-[0.35rem]
-    px-[0.75rem]
-    font-mono
-    text-[0.65rem]
-    uppercase
-    tracking-[0.1em]
-    text-[hsl(var(--foreground-muted))]
-    cursor-pointer
-    transition-colors
-    duration-150
-
-    hover:bg-[hsl(var(--card)/0.5)]
-hover:text-[hsl(var(--foreground))]... ${sortBy === 'winRate' ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]' : ''}`}
-            >
-              taux win
-            </button>
+          <div className="flex items-center gap-[0.4rem] bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[var(--radius)] p-[3px]">
+            {(
+              [
+                { label: 'Points', value: 'points' },
+                { label: 'Victoires', value: 'wins' },
+                { label: 'Parties', value: 'total_games' },
+                { label: 'Taux win', value: 'winRate' },
+              ] as { label: string; value: SortBy }[]
+            ).map((btn) => (
+              <button
+                key={btn.value}
+                onClick={() => onSortChange(btn.value)}
+                className={`inline-flex items-center gap-[0.4rem] border-none rounded-[calc(var(--radius)-4px)] py-[0.35rem] px-[0.75rem] font-mono text-[0.65rem] uppercase tracking-[0.1em] cursor-pointer transition-colors duration-150 ${
+                  sortBy === btn.value
+                    ? 'bg-[hsl(var(--foreground)/0.08)] text-[hsl(var(--foreground))]'
+                    : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--foreground)/0.08)] hover:text-[hsl(var(--foreground))]'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
           </div>
-        </div>{' '}
-        {/* fin gauche */}
-        {/* compteur résultat  */}
-        <div
-          className="
-    font-mono
-    text-[0.7rem]
-    text-[hsl(var(--foreground-muted))]
-    uppercase
-    tracking-[0.1em]
-  "
-        >
-          <span
-            className="
-    text-[hsl(var(--foreground-secondary))]
-    font-semibold
-  "
-          >
+        </div>
+
+        <div className="font-mono text-[0.7rem] text-[hsl(var(--foreground-muted))] uppercase tracking-[0.1em]">
+          <span className="text-[hsl(var(--foreground))] font-semibold">
             {data.length}
-          </span>
+          </span>{' '}
           résultats
         </div>
-      </div>{' '}
+      </div>
+
       {/* tableau */}
       <div className="border border-[hsl(var(--border))] rounded-[var(--radius)] overflow-hidden">
         <table className="w-full">
@@ -231,22 +77,34 @@ hover:text-[hsl(var(--foreground))]... ${sortBy === 'winRate' ? 'bg-[hsl(var(--p
               <th className="py-3 px-4 text-left font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]">
                 Joueur
               </th>
-              <th className="py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--gold))]">
+              {/* Desktop : toujours visible — Mobile : visible seulement si sortBy actif */}
+              <th
+                className={`${sortBy === 'wins' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--gold))]`}
+              >
                 1er
               </th>
-              <th className="py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--silver))]">
+              <th className="hidden md:table-cell py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--silver))]">
                 2ème
               </th>
-              <th className="py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--bronze))]">
+              <th className="hidden md:table-cell py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--bronze))]">
                 3ème
               </th>
-              <th className="py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]">
+              <th className="hidden md:table-cell py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--delete))]">
                 4ème
               </th>
-              <th className="py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]">
+              <th
+                className={`${sortBy === 'total_games' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--foreground-muted))]`}
+              >
                 Parties
               </th>
-              <th className="py-3 px-4 text-right font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--primary))]">
+              <th
+                className={`${sortBy === 'winRate' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-center font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--success))]`}
+              >
+                WinRate
+              </th>
+              <th
+                className={`${sortBy === 'points' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-right font-mono text-[0.65rem] uppercase tracking-[0.12em] text-[hsl(var(--primary))]`}
+              >
                 Points
               </th>
             </tr>
@@ -267,7 +125,7 @@ hover:text-[hsl(var(--foreground))]... ${sortBy === 'winRate' ? 'bg-[hsl(var(--p
               return (
                 <tr
                   key={entry.user_id}
-                  className="border-b border-[hsl(var(--border)/0.5)] hover:bg-[hsl(var(--foreground)/0.03)] transition-colors cursor-pointer last:border-0"
+                  className="border-b border-[hsl(var(--border)/0.5)] hover:bg-[hsl(var(--background-dark))] transition-colors cursor-pointer last:border-0"
                 >
                   <td className="py-3 px-4 w-12">
                     <span
@@ -310,22 +168,36 @@ hover:text-[hsl(var(--foreground))]... ${sortBy === 'winRate' ? 'bg-[hsl(var(--p
                     </div>
                   </td>
 
-                  <td className="py-3 px-4 text-center font-mono text-sm font-semibold text-[hsl(var(--gold))]">
+                  <td
+                    className={`${sortBy === 'wins' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-center font-mono text-sm font-semibold text-[hsl(var(--gold))]`}
+                  >
                     {entry.wins}
                   </td>
-                  <td className="py-3 px-4 text-center font-mono text-sm text-[hsl(var(--silver))]">
+                  <td className="hidden md:table-cell py-3 px-4 text-center font-mono text-sm text-[hsl(var(--silver))]">
                     {entry.p2}
                   </td>
-                  <td className="py-3 px-4 text-center font-mono text-sm text-[hsl(var(--bronze))]">
+                  <td className="hidden md:table-cell py-3 px-4 text-center font-mono text-sm text-[hsl(var(--bronze))]">
                     {entry.p3}
                   </td>
-                  <td className="py-3 px-4 text-center font-mono text-sm text-[hsl(var(--foreground-muted))]">
+                  <td className="hidden md:table-cell py-3 px-4 text-center font-mono text-sm text-[hsl(var(--delete))]">
                     {entry.p4}
                   </td>
-                  <td className="py-3 px-4 text-center font-mono text-sm text-[hsl(var(--foreground-muted))]">
+                  <td
+                    className={`${sortBy === 'total_games' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-center font-mono text-sm text-[hsl(var(--foreground-muted))]`}
+                  >
                     {entry.total_games}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td
+                    className={`${sortBy === 'winRate' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4`}
+                  >
+                    <ProgressBar
+                      value={entry.winRate}
+                      color="hsl(var(--success))"
+                    />
+                  </td>
+                  <td
+                    className={`${sortBy === 'points' ? 'table-cell' : 'hidden md:table-cell'} py-3 px-4 text-right`}
+                  >
                     <span className="inline-flex items-center gap-1 bg-[hsl(var(--primary)/0.12)] border border-[hsl(var(--primary)/0.25)] text-[hsl(var(--primary))] text-xs font-semibold px-2.5 py-1 rounded-full font-mono">
                       ★ {entry.points}
                     </span>
