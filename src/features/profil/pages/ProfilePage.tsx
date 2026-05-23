@@ -3,10 +3,10 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfileStats } from '../hooks/useProfileStats'
 import { supabase } from '@/lib/supabase'
-import { ChangePasswordModal } from './ChangePasswordModal'
-import { ProfileIdentityCard } from './ProfileIdentityCard'
-import { ProfileSettingsCard } from './ProfileSettingsCard'
-import { PerformancesCard } from './PerformancesCard'
+import { ChangePasswordModal } from '../components/ChangePasswordModal'
+import { ProfileIdentityCard } from '../components/ProfileIdentityCard'
+import { ProfileSettingsCard } from '../components/ProfileSettingsCard'
+import { PerformancesCard } from '../components/PerformancesCard'
 
 export function ProfilePage() {
   const { profile, user, setProfile } = useAuthStore()

@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { usePublicProfile } from '../hooks/usePublicProfile'
-import { ProfileIdentityCard } from './ProfileIdentityCard'
-import { PerformancesCard } from './PerformancesCard'
+import { ProfileIdentityCard } from '../components/ProfileIdentityCard'
+import { PerformancesCard } from '../components/PerformancesCard'
 
 export function PublicProfilePage() {
   const { userId } = useParams<{ userId: string }>()
