@@ -49,7 +49,8 @@ export function PodiumCard({ entry, rank }: PodiumCardProps) {
           navigate(`/profile/${entry.user_id}`)
         }
       }}
-      className={`relative border rounded-[calc(var(--radius)+4px)] pt-[1.75rem] px-[1.25rem] pb-[1.25rem] text-center overflow-hidden hover:-translate-y-1 transition-transform duration-300 ease-in-out ${r.card}`}
+      className={`cursor-pointer 
+        relative border rounded-[calc(var(--radius)+4px)] pt-[1.75rem] px-[1.25rem] pb-[1.25rem] text-center overflow-hidden hover:-translate-y-1 transition-transform duration-300 ease-in-out ${r.card}`}
     >
       <div
         className={`relative z-[1] inline-flex items-center justify-center w-[36px] h-[36px] rounded-full font-display font-extrabold text-[0.95rem] mb-4 ${r.badge}`}

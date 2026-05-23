@@ -10,7 +10,7 @@ import { PublicProfilePage } from './features/profil/components/PublicProfilePag
 import { LeaderboardPage } from './features/leaderboard/pages/LeaderboardPage'
 import { Nav } from './shared/Nav'
 import { Footer } from './shared/Footer'
-import { useTheme } from './features/profil/hooks/useTheme'
+import { useTheme } from './hooks/useTheme'
 import { useAuthStore } from './stores/useAuthStore'
 import { useGameStore } from '@/features/game/store/gameStore'
 import { supabase } from '@/lib/supabase'
