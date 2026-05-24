@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { FileText, Play, User, ArrowRight, Trophy } from 'lucide-react'
+import {
+  FileText,
+  Play,
+  User,
+  ArrowRight,
+  Trophy,
+  Newspaper,
+} from 'lucide-react'
 import { useGameStore } from '@/features/game/store/gameStore'
 import type { BotDifficulty } from '@/features/game/utils/types'
 import { useNavigate } from 'react-router-dom'
@@ -38,6 +45,17 @@ const STATIC_CARDS = [
     footer: 'Voir le classement',
     href: '#',
     onClickPath: '/leaderboard',
+  },
+
+  {
+    tag: 'Feed',
+    title: 'Feed',
+    description: 'Consulte le feed des dernières actualités.',
+    icon: Newspaper,
+    accentVar: '--info',
+    footer: 'Voir le feed',
+    href: '#',
+    onClickPath: '/feed',
   },
 ]
 
@@ -113,6 +131,11 @@ export function QuickAccessCards() {
           <CardStatic
             data={STATIC_CARDS[2]!}
             onClick={() => navigate(STATIC_CARDS[2]!.onClickPath)}
+          />
+          {/* Card 5 — Feed */}
+          <CardStatic
+            data={STATIC_CARDS[3]!}
+            onClick={() => navigate(STATIC_CARDS[3]!.onClickPath)}
           />
         </div>
       </div>

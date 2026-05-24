@@ -8,7 +8,8 @@ import logoDwc from '@/assets/logo-DWCV1.png'
 
 const NAV_LINKS = [
   { label: 'Home', href: '/' },
-  { label: 'Règles', href: '/rules' },
+  { label: 'Feed', href: '/feed' },
+  { label: 'Règles', href: '/' },
   { label: 'Jouer', href: '/game' },
   { label: 'Classement', href: '/leaderboard' },
   { label: 'Profil', href: '/profile' },

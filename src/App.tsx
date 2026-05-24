@@ -15,6 +15,7 @@ import { useAuthStore } from './stores/useAuthStore'
 import { useGameStore } from '@/features/game/store/gameStore'
 import { supabase } from '@/lib/supabase'
 import { useEffect } from 'react'
+import { FeedPage } from './features/feed/pages/FeedPage'
 
 const queryClient = new QueryClient()
 
@@ -122,6 +123,16 @@ function AppContent() {
             <Layout>
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/feed"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <FeedPage />
               </ProtectedRoute>
             </Layout>
           }
