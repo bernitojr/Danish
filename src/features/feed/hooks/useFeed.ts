@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { FeedPost } from '../utils/types'
 import { useCallback, useEffect, useState } from 'react'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const PAGE_SIZE = 5
 
@@ -9,22 +10,24 @@ async function fetchFeedPage(from: number) {
     .from('feed_posts')
     .select(
       `
-  id,
-  content,
-  created_at,
-  author:profiles(id, username, avatar_url),
-  likes:feed_post_likes(id, user_id),
-  comments:feed_comments(id)
-  `
+      id,
+      content,
+      created_at,
+      is_pinned,
+      author:profiles(id, username, avatar_url),
+      likes:feed_post_likes(id, user_id),
+      comments:feed_comments(id)
+    `
     )
+    .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
     .range(from, from + PAGE_SIZE - 1)
 
   if (error) throw error
   return data as unknown as FeedPost[]
 }
-
 export function useFeed() {
+  const { user } = useAuthStore()
   const [posts, setPosts] = useState<FeedPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
@@ -52,14 +55,22 @@ export function useFeed() {
       setHasMore(data.length === PAGE_SIZE)
       setFrom((prev) => prev + PAGE_SIZE)
     } catch (err) {
-      console.error('useFeed : loadMore error', err)
+      console.error('useFeed: loadMore error', err)
     } finally {
       setIsLoading(false)
     }
   }, [from])
 
+  // Chargement initial
   useEffect(() => {
+    if (!user) return
     loadInitial()
+  }, [user])
+
+  // Realtime
+  useEffect(() => {
+    if (!user) return
+
     const channel = supabase
       .channel('feed_posts_realtime')
       .on(
@@ -70,13 +81,13 @@ export function useFeed() {
             .from('feed_posts')
             .select(
               `
-                id,
-                content,
-                created_at,
-                author:profiles(id, username, avatar_url),
-                likes:feed_post_likes(id, user_id),
-                comments:feed_comments(id)
-                `
+              id,
+              content,
+              created_at,
+              author:profiles(id, username, avatar_url),
+              likes:feed_post_likes(id, user_id),
+              comments:feed_comments(id)
+            `
             )
             .eq('id', payload.new.id)
             .single()
@@ -84,10 +95,19 @@ export function useFeed() {
           if (data) setPosts((prev) => [data as unknown as FeedPost, ...prev])
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'feed_posts' },
+        (payload) => {
+          setPosts((prev) => prev.filter((p) => p.id !== payload.old.id))
+        }
+      )
       .subscribe()
+
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
-  return { posts, isLoading, hasMore, loadMore }
+  }, [user])
+
+  return { posts, isLoading, hasMore, loadMore, setPosts }
 }

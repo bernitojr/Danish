@@ -2,6 +2,7 @@ export interface FeedAuthor {
   id: string
   username: string
   avatar_url: string | null
+  role: string
 }
 
 export interface FeedLike {
@@ -22,6 +23,7 @@ export interface FeedPost {
   id: string
   content: string
   created_at: string
+  is_pinned?: boolean
   author: FeedAuthor
   likes: FeedLike[]
   comments: FeedComment[]

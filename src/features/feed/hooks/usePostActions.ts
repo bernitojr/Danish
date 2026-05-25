@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { FeedPost } from '../utils/types'
+import { toast } from 'sonner'
 
 export function usePostActions(
   setPosts: React.Dispatch<React.SetStateAction<FeedPost[]>>
@@ -35,7 +36,7 @@ export function usePostActions(
     // 3. requête Supabase INSERT ou DELETE
     if (existingLike) {
       const { error } = await supabase
-        .from('feed_posts_likes')
+        .from('feed_post_likes')
         .delete()
         .eq('id', existingLike.id)
       if (error) rollback()
@@ -51,8 +52,58 @@ export function usePostActions(
     const { error } = await supabase
       .from('feed_posts')
       .insert({ content, author_id: authorId })
-    if (error) console.error('usePostActop,s = createPost error', error)
+
+    if (error) {
+      console.error('usePostActions: createPost error', error)
+      toast.error('Erreur lors de la publication')
+      return
+    }
+
+    toast.success('Publication envoyée')
   }
 
-  return { toggleLike, createPost }
+  async function deletePost(postId: string) {
+    const { error } = await supabase
+      .from('feed_posts')
+      .delete()
+      .eq('id', postId)
+
+    if (error) {
+      console.error('usePostActions: deletePost error', error)
+      toast.error('Erreur lors de la suppression')
+      return
+    }
+
+    setPosts((prev) => prev.filter((p) => p.id !== postId))
+    toast.success('Publication supprimée')
+  }
+
+  async function togglePin(post: FeedPost) {
+    const { error } = await supabase
+      .from('feed_posts')
+      .update({ is_pinned: !post.is_pinned })
+      .eq('id', post.id)
+
+    if (error) {
+      console.error('usePostActions: togglePin error', error)
+      toast.error("Erreur lors de l'épinglage")
+      return
+    }
+
+    setPosts((prev) => {
+      const updated = prev.map((p) => {
+        if (p.id === post.id) return { ...p, is_pinned: !post.is_pinned }
+        return { ...p, is_pinned: false }
+      })
+
+      return [
+        ...updated.filter((p) => p.is_pinned),
+        ...updated.filter((p) => !p.is_pinned),
+      ]
+    })
+    toast.success(
+      post.is_pinned ? 'Publication désépinglée' : 'Publication épinglée'
+    )
+  }
+  return { toggleLike, createPost, deletePost, togglePin }
 }
