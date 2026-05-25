@@ -48,15 +48,35 @@ export function usePostActions(
     }
   }
 
-  async function createPost(content: string, authorId: string) {
-    const { error } = await supabase
+  async function createPost(
+    content: string,
+    authorId: string,
+    previews: { file: File; previewUrl: string }[] = [],
+    uploadImages: (postId: string) => Promise<string[]>
+  ) {
+    const { data, error } = await supabase
       .from('feed_posts')
       .insert({ content, author_id: authorId })
+      .select('id')
+      .single()
 
     if (error) {
-      console.error('usePostActions: createPost error', error)
       toast.error('Erreur lors de la publication')
+      console.error('usePostActions: createPost error', error)
       return
+    }
+
+    if (previews.length > 0) {
+      const imageUrls = await uploadImages(data.id)
+      if (imageUrls.length > 0) {
+        await supabase.from('feed_post_images').insert(
+          imageUrls.map((url, position) => ({
+            post_id: data.id,
+            url,
+            position,
+          }))
+        )
+      }
     }
 
     toast.success('Publication envoyée')

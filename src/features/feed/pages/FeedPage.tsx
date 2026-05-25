@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { Images, Pin, Send, Star } from 'lucide-react'
+import { Images, Send, Star, X } from 'lucide-react'
 import { useFeed } from '../hooks/useFeed'
 import { usePostActions } from '../hooks/usePostActions'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { PostCard } from '../components/PostCard'
+import { useImageUpload } from '../hooks/useImageUpload'
 
 export function FeedPage() {
   const { posts, isLoading, hasMore, loadMore, setPosts } = useFeed()
+  const { previews, isUploading, addImages, removeImage, reset, uploadImages } =
+    useImageUpload()
   const { toggleLike, createPost, deletePost, togglePin } =
     usePostActions(setPosts)
   const { user, profile } = useAuthStore()
@@ -72,24 +75,70 @@ export function FeedPage() {
                 className="resize-none w-full bg-[hsl(var(--background-dark))] border border-[hsl(var(--border))] rounded-[var(--radius)] py-3 px-[0.875rem] font-sans text-sm text-[hsl(var(--foreground))] min-h-[80px] outline-none transition-colors leading-[1.5]"
               />
 
+              {/* preview images */}
+              {previews.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {previews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={preview.previewUrl}
+                        alt={`preview-${index}`}
+                        className="w-[80px] h-[80px] object-cover rounded-[calc(var(--radius)-2px)] border border-[hsl(var(--border))]"
+                      />
+                      <button
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] bg-[hsl(var(--delete))] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-none cursor-pointer"
+                      >
+                        <X className="w-[10px] h-[10px] text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* composer actions */}
               <div className="flex items-center justify-between mt-[0.875rem] gap-2 flex-wrap">
                 <div className="flex gap-[0.3rem]">
-                  <button className="w-[32px] h-[32px] rounded-[calc(var(--radius)-2px)] border border-[hsl(var(--border))] bg-transparent cursor-pointer flex items-center justify-center text-[hsl(var(--foreground-muted))] transition-colors">
+                  <button
+                    onClick={() =>
+                      document.getElementById('image-input')?.click()
+                    }
+                    className="w-[32px] h-[32px] rounded-[calc(var(--radius)-2px)] border border-[hsl(var(--border))] bg-transparent cursor-pointer flex items-center justify-center text-[hsl(var(--foreground-muted))] transition-colors hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--foreground-muted))]"
+                  >
                     <Images className="w-[14px] h-[14px]" />
                   </button>
+                  <input
+                    id="image-input"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) addImages(e.target.files)
+                    }}
+                  />
                 </div>
                 <button
-                  onClick={() => {
-                    if (!composerContent.trim()) return
-                    createPost(composerContent, user?.id ?? '')
+                  onClick={async () => {
+                    if (!composerContent.trim() && previews.length === 0) return
+
+                    // upload d'abord les images dans un dossier temporaire
+                    // createPost crée le post et insère les images
+                    await createPost(
+                      composerContent,
+                      user?.id ?? '',
+                      previews,
+                      uploadImages
+                    )
+
                     setComposerContent('')
+                    reset()
                   }}
-                  disabled={!composerContent.trim()}
+                  disabled={!composerContent.trim() || isUploading}
                   className="inline-flex items-center gap-[0.4rem] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-sans text-[0.8125rem] font-semibold py-[0.55rem] px-[1.1rem] rounded-[calc(var(--radius)-2px)] cursor-pointer transition-opacity disabled:opacity-45 disabled:cursor-not-allowed"
                 >
                   <Send className="w-[18px] h-[18px]" />
-                  Publier
+                  {isUploading ? 'Upload...' : 'Publier'}
                 </button>
               </div>
             </div>

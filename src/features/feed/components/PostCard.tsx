@@ -36,7 +36,6 @@ export const PostCard = ({
       )}
 
       {/* post header */}
-      {/* post header */}
       <div className="flex items-center justify-between gap-3 pt-[1.1rem] px-5 pb-2">
         <div className="flex items-center gap-3">
           <AuthorChip
@@ -83,6 +82,35 @@ export const PostCard = ({
       <div className="pt-1 px-5 pb-4 text-[0.9rem] text-[hsl(var(--foreground-secondary))] leading-[1.6] whitespace-pre-wrap break-words">
         <p>{post.content}</p>
       </div>
+      {/* images */}
+      {post.images && post.images.length > 0 && (
+        <div
+          className={`px-5 pb-4 grid gap-2 ${
+            post.images.length === 1
+              ? 'grid-cols-1'
+              : post.images.length === 2
+                ? 'grid-cols-2'
+                : 'grid-cols-2'
+          }`}
+        >
+          {post.images
+            .sort((a, b) => a.position - b.position)
+            .map((image, index) => (
+              <div
+                key={image.id}
+                className={`overflow-hidden rounded-[calc(var(--radius)-2px)] ${
+                  post.images.length === 3 && index === 0 ? 'col-span-2' : ''
+                }`}
+              >
+                <img
+                  src={image.url}
+                  alt={`image-${index}`}
+                  className="w-full h-full object-cover max-h-[320px]"
+                />
+              </div>
+            ))}
+        </div>
+      )}
 
       {/* reaction strip */}
       <div className="flex items-center justify-between flex-wrap gap-2 py-[0.6rem] px-5 border-t border-b border-[hsl(var(--border)/0.4)] text-[0.78rem] text-[hsl(var(--foreground-muted))]">

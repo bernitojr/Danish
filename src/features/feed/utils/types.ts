@@ -19,6 +19,13 @@ export interface FeedComment {
   likes: FeedLike[]
 }
 
+export interface FeedPostImage {
+  id: string
+  post_id: string
+  url: string
+  position: number
+}
+
 export interface FeedPost {
   id: string
   content: string
@@ -27,6 +34,7 @@ export interface FeedPost {
   author: FeedAuthor
   likes: FeedLike[]
   comments: FeedComment[]
+  images: FeedPostImage[]
 }
 
 export interface FeedState {

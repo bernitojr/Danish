@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import type { FeedPost } from '../utils/types'
 import { useCallback, useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { toast } from 'sonner'
 
 const PAGE_SIZE = 5
 
@@ -16,7 +17,8 @@ async function fetchFeedPage(from: number) {
       is_pinned,
       author:profiles(id, username, avatar_url),
       likes:feed_post_likes(id, user_id),
-      comments:feed_comments(id)
+      comments:feed_comments(id),
+        images:feed_post_images(id, url, position)
     `
     )
     .order('is_pinned', { ascending: false })
@@ -73,28 +75,70 @@ export function useFeed() {
 
     const channel = supabase
       .channel('feed_posts_realtime')
+
+      // nouveau post → l'ajouter en haut du feed
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'feed_posts' },
         async (payload) => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('feed_posts')
             .select(
               `
-              id,
-              content,
-              created_at,
-              author:profiles(id, username, avatar_url),
-              likes:feed_post_likes(id, user_id),
-              comments:feed_comments(id)
-            `
+          id,
+          content,
+          created_at,
+          is_pinned,
+          author:profiles(id, username, avatar_url),
+          likes:feed_post_likes(id, user_id),
+          comments:feed_comments(id),
+          images:feed_post_images(id, url, position)
+        `
             )
             .eq('id', payload.new.id)
             .single()
 
+          if (error) return
           if (data) setPosts((prev) => [data as unknown as FeedPost, ...prev])
         }
       )
+
+      // nouvelle image → mettre à jour le post concerné
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'feed_post_images' },
+        async (payload) => {
+          const postId = payload.new.post_id
+
+          const { data, error } = await supabase
+            .from('feed_posts')
+            .select(
+              `
+          id,
+          content,
+          created_at,
+          is_pinned,
+          author:profiles(id, username, avatar_url),
+          likes:feed_post_likes(id, user_id),
+          comments:feed_comments(id),
+          images:feed_post_images(id, url, position)
+        `
+            )
+            .eq('id', postId)
+            .single()
+
+          if (error) return
+          if (data) {
+            setPosts((prev) =>
+              prev.map((p) =>
+                p.id === postId ? (data as unknown as FeedPost) : p
+              )
+            )
+          }
+        }
+      )
+
+      // post supprimé → le retirer du feed
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'feed_posts' },
@@ -102,6 +146,7 @@ export function useFeed() {
           setPosts((prev) => prev.filter((p) => p.id !== payload.old.id))
         }
       )
+
       .subscribe()
 
     return () => {
