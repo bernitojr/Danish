@@ -98,8 +98,16 @@ export function useFeed() {
             .eq('id', payload.new.id)
             .single()
 
-          if (error) return
-          if (data) setPosts((prev) => [data as unknown as FeedPost, ...prev])
+          if (error) toast.error('Erreur lors de la création du post')
+          console.error('useFeed realtime post: fetch post error', error)
+          if (data) {
+            setPosts((prev) => {
+              const newPost = data as unknown as FeedPost
+              const pinned = prev.filter((p) => p.is_pinned)
+              const unpinned = prev.filter((p) => !p.is_pinned)
+              return [...pinned, newPost, ...unpinned]
+            })
+          }
         }
       )
 
@@ -127,7 +135,8 @@ export function useFeed() {
             .eq('id', postId)
             .single()
 
-          if (error) return
+          if (error) toast.error("Erreur lors de l'ajout d'une image au post")
+          console.error('useFeed realtime image: fetch post error', error)
           if (data) {
             setPosts((prev) =>
               prev.map((p) =>

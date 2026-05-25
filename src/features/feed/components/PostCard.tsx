@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FeedPost } from '../utils/types'
 import { MessageCircle, Pin, ThumbsUp, X } from 'lucide-react'
 import { AuthorChip } from './AuthorChip'
+import { CommentSection } from './CommentSection'
 
 interface PostCardProps {
   post: FeedPost
@@ -155,6 +156,7 @@ export const PostCard = ({
       {isCommentOpen && (
         <div className="border-t border-[hsl(var(--border)/0.4)] pt-[0.875rem] px-5 pb-4">
           {/* <CommentSection postId={post.id} /> — on branchera ici */}
+          <CommentSection postId={post.id} currentUserId={currentUserId} />
         </div>
       )}
     </div>
