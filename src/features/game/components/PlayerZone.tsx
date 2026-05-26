@@ -76,14 +76,22 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
 
   const banner = (
     <div className="flex items-center gap-1.5">
-      <div className={`${isHuman ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs'} rounded-full bg-white/20 flex items-center justify-center font-bold text-white flex-shrink-0`}>
+      <div
+        className={`${isHuman ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs'} rounded-full flex items-center justify-center font-bold flex-shrink-0`}
+        style={{
+          background: 'hsl(var(--card))',
+          border: '1.5px solid hsl(var(--border))',
+          color: 'hsl(var(--foreground))',
+          fontFamily: 'var(--font-display)',
+        }}
+      >
         {player.name[0]}
       </div>
       <div>
-        <div className={`text-white ${isHuman ? 'text-sm font-medium' : 'text-xs'}`}>{player.name}</div>
-        <div className="text-white/50 text-[10px] italic">{player.title}</div>
+        <div className={isHuman ? 'text-sm' : 'text-xs'} style={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-display)', fontWeight: 600 }}>{player.name}</div>
+        <div className="text-[10px] italic" style={{ color: 'hsl(var(--foreground-muted))' }}>{player.title}</div>
       </div>
-      {isCurrentPlayer && <span className="text-yellow-400 text-xs animate-pulse ml-1">▶</span>}
+      {isCurrentPlayer && <span className="text-xs animate-pulse ml-1" style={{ color: 'hsl(var(--accent))' }}>▶</span>}
     </div>
   );
 
@@ -126,22 +134,25 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
   return (
     <div className="flex flex-col items-center gap-1 overflow-visible">
       <div className="flex flex-col items-center gap-0.5">
-        <span className="text-white/40 text-[10px] uppercase tracking-wide">Sur la table</span>
+        <span className="text-[10px] uppercase tracking-wide" style={{ color: 'hsl(var(--foreground-muted))', letterSpacing: '0.08em' }}>Sur la table</span>
         {tableCards}
         {!isPreparing && handEmpty && visibleEmpty && player.hiddenCards.length > 0 && (
-          <p className="text-orange-300 text-[10px] mt-0.5">Retournez une carte cachée</p>
+          <p className="text-[10px] mt-0.5" style={{ color: 'hsl(var(--warning))' }}>Retournez une carte cachée</p>
         )}
         {!isPreparing && handEmpty && !visibleEmpty && (
-          <p className="text-blue-300 text-[10px] mt-0.5">Jouez vos cartes visibles</p>
+          <p className="text-[10px] mt-0.5" style={{ color: 'hsl(var(--info))' }}>Jouez vos cartes visibles</p>
         )}
       </div>
-      <div className={`flex flex-col items-center gap-0.5 px-3 py-1 bg-black/30 rounded-lg border border-white/10 overflow-visible ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}>
-        <span className="text-white/40 text-[10px] uppercase tracking-wide">En main</span>
+      <div
+        className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg overflow-visible ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}
+        style={{ background: 'hsl(var(--background-dark))', border: '1px solid hsl(var(--border))' }}
+      >
+        <span className="text-[10px] uppercase tracking-wide" style={{ color: 'hsl(var(--foreground-muted))', letterSpacing: '0.08em' }}>En main</span>
         <div className="overflow-visible" style={{ transformOrigin: 'center bottom' }}>
           <FanRow cards={sortedHand} isHidden={false} validMoves={validMoves} bestMove={bestMove} selectedIds={isPreparing && pendingSwap?.zone === 'hand' ? [pendingSwap.card.id] : selectedCardIds} onCardClick={handleHandClick} />
         </div>
         {isPreparing && pendingSwap && (
-          <p className="text-yellow-300 text-[10px] mt-0.5">
+          <p className="text-[10px] mt-0.5" style={{ color: 'hsl(var(--accent))' }}>
             {pendingSwap.zone === 'hand' ? 'Cliquez une carte visible' : 'Cliquez une carte en main'}
           </p>
         )}
