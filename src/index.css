@@ -80,5 +80,5 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .like-bg-flash {
-  animation: like-bg-flash 0.5s ease-out;
+  animation: like-bg-flash 0.5s ease-in-out;
 }
