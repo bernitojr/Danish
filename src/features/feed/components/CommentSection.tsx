@@ -6,18 +6,26 @@ import { CommentCard } from './CommentCard'
 interface CommentSectionProps {
   postId: string
   currentUserId: string
+  isAdmin: boolean
 }
 
 export const CommentSection = ({
   postId,
   currentUserId,
+  isAdmin,
 }: CommentSectionProps) => {
   const [newComment, setNewComment] = useState('')
-  const { comments, isLoading, postComment, toggleCommentLike } =
-    useComments(postId)
+  const {
+    comments,
+    isLoading,
+    postComment,
+    toggleCommentLike,
+    editComment,
+    deleteComment,
+  } = useComments(postId)
 
   return (
-    <div className="border-t border-[hsl(var(--border)/0.4)] pt-[0.875rem] px-5 pb-4">
+    <div className="px-5 pb-4">
       {/* état loading */}
       {isLoading && (
         <p className="text-[0.75rem] text-[hsl(var(--foreground-muted))] py-2">
@@ -38,7 +46,10 @@ export const CommentSection = ({
           key={comment.id}
           comment={comment}
           currentUserId={currentUserId}
+          isAdmin={isAdmin}
           onToggleLike={toggleCommentLike}
+          onEdit={editComment}
+          onDelete={deleteComment}
         />
       ))}
 

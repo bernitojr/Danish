@@ -21,7 +21,7 @@ export const PostCard = ({
   onDelete,
   onTogglePin,
 }: PostCardProps) => {
-  const [isCommentOpen, setIsCommentOpen] = useState(false)
+  const [isCommentOpen, setIsCommentOpen] = useState(post.comments.length > 0) // ouvrir automatiquement si il y a déjà des commentaires
   const isLiked = post.likes.some((l) => l.user_id === currentUserId)
   const likeCount = post.likes.length
   const commentCount = post.comments.length
@@ -156,7 +156,11 @@ export const PostCard = ({
       {isCommentOpen && (
         <div className="border-t border-[hsl(var(--border)/0.4)] pt-[0.875rem] px-5 pb-4">
           {/* <CommentSection postId={post.id} /> — on branchera ici */}
-          <CommentSection postId={post.id} currentUserId={currentUserId} />
+          <CommentSection
+            postId={post.id}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+          />
         </div>
       )}
     </div>
