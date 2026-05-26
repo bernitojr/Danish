@@ -21,15 +21,15 @@ export function Footer() {
     <footer className="relative border-t border-[hsl(var(--border)/0.5)] bg-[hsl(var(--background)/0.5)] backdrop-blur-sm shadow-[0_-8px_20px_-12px_hsl(var(--shadow-color))]">
       <div className="max-w-7xl mx-auto flex items-center justify-end">
         <div className="flex items-center">
+          <span className="text-md text-[hsl(var(--foreground))] font-sans font-medium">
+            bernitoCorporation production
+          </span>
           <img
             src={logoBc}
-            alt="Bernito Corp"
+            alt="Bernito Corpation"
             className="w-[4rem] h-[4rem] object-contain"
             style={{ filter: isDark ? 'invert(1)' : 'none' }}
           />
-          <span className="text-md text-[hsl(var(--foreground-muted))] font-display">
-            BERNITO CORP
-          </span>
         </div>
       </div>
     </footer>
