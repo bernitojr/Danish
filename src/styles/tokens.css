@@ -12,7 +12,7 @@
   /* ── Couche 2: Typographie ── */
   --font-sans: "Inter", sans-serif;      
   --font-display: "Montserrat", sans-serif;   
-  --font-mono: "Fraunces", serif;     
+  --font-mono: "Space Mono", monospace;     
   
   /* ── Couche 2: Rayons & autres ── */
   --radius: 0.5rem;
