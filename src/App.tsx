@@ -52,6 +52,15 @@ function Layout({ children }: { children: React.ReactNode }) {
   )
 }
 
+function GameLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Nav />
+      <main className="flex flex-1 overflow-hidden min-h-0">{children}</main>
+    </div>
+  )
+}
+
 function AppContent() {
   useTheme()
   const { setUser, setProfile, setIsLoading } = useAuthStore()
@@ -92,9 +101,9 @@ function AppContent() {
         <Route
           path="/game"
           element={
-            <Layout>
+            <GameLayout>
               <GameRoute />
-            </Layout>
+            </GameLayout>
           }
         />
         <Route

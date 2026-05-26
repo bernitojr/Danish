@@ -6,6 +6,7 @@ export default {
       fontFamily: {
         fraunces: ['Fraunces', 'serif'],
         montserrat: ['Montserrat', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
     },
   },
