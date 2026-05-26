@@ -473,16 +473,12 @@ export function GameBoard() {
 
         {/* ── Row 1 : Bot top ── */}
         <div className="relative z-10 flex-none flex items-end justify-center pt-4 pb-2">
-          <div className="flex items-end justify-center" style={{ minHeight: 160 }}>
-            <BotZone player={bot2} idx={2} />
-          </div>
+          <BotZone player={bot2} idx={2} />
         </div>
 
         {/* ── Row 2 : Centre ── */}
         <div className="relative z-10 flex flex-1 items-center justify-center gap-12 min-h-0">
-          <div className="flex items-center justify-center" style={{ minWidth: 180, minHeight: 160 }}>
-            <BotZone player={bot1} idx={1} />
-          </div>
+          <BotZone player={bot1} idx={1} />
           <div className="relative flex flex-col items-center gap-2">
             <div className="flex items-center gap-6">
               {/* Fosse */}
@@ -591,9 +587,7 @@ export function GameBoard() {
               </div>
             )}
           </div>
-          <div className="flex items-center justify-center" style={{ minWidth: 180, minHeight: 160 }}>
-            <BotZone player={bot3} idx={3} />
-          </div>
+          <BotZone player={bot3} idx={3} />
         </div>
 
         {/* ── Row 3 : Human player zone — shrink-wraps content, no fixed height ── */}
@@ -708,10 +702,10 @@ export function GameBoard() {
 
         {/* Emotes */}
         <div
-          className="flex-none"
+          className="flex items-center justify-center"
           style={{ padding: 12, borderTop: '1px solid hsl(var(--border))' }}
         >
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/30 p-1.5">
+          <div className="grid grid-cols-2 gap-1 rounded-lg p-1.5">
             {EMOTES.map((e) => (
               <button
                 key={e}

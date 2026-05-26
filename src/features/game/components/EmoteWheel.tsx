@@ -1,32 +1,25 @@
-import { useEffect, useState } from 'react';
-
-const EMOTES = ['😊', '😐', '😍', '😵'];
+const EMOTES = ['😊', '😐', '😍', '😵']
 
 interface Props {
-  onEmote: (emote: string) => void;
+  onEmote: (emote: string) => void
 }
 
 export function EmoteWheel({ onEmote }: Props) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const t = setTimeout(() => setOpen(false), 3000);
-    return () => clearTimeout(t);
-  }, [open]);
-
   return (
-    <div className="relative"> (
-        <div className="absolute bottom-8 left-0 grid grid-cols-2 gap-3 p-4 bg-black/80 rounded-xl border border-white/20 w-fit min-w-[120px] z-20">
-          {EMOTES.map(e => (
-            <button key={e} onClick={() => { onEmote(e); setOpen(false); }}
-              className="text-3xl p-2 hover:scale-125 transition-transform leading-none flex items-center justify-center w-12 h-12">
-              {e}
-            </button>
-          ))}
-        </div>
-      )
-      
+    <div className="grid grid-cols-2 gap-2 ">
+      {EMOTES.map((e) => (
+        <button
+          key={e}
+          onClick={() => onEmote(e)}
+          className="text-3xl p-2 hover:scale-125 transition-transform leading-none flex items-center justify-center w-12 h-12 rounded-lg"
+          style={{
+            background: 'hsl(var(--card))',
+            border: '1px solid hsl(var(--border))',
+          }}
+        >
+          {e}
+        </button>
+      ))}
     </div>
-  );
+  )
 }
