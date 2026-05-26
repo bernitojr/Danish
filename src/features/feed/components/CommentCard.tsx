@@ -28,6 +28,15 @@ export const CommentCard = ({
 
   const [isEditing, setIsEditing] = useState(false)
   const [editContent, setEditContent] = useState(comment.content)
+  const [likeAnimating, setLikeAnimating] = useState(false)
+
+  function handleCommentLike() {
+    onToggleLike(comment, currentUserId)
+    if (!isLiked) {
+      setLikeAnimating(true)
+      setTimeout(() => setLikeAnimating(false), 600)
+    }
+  }
 
   function handleEdit() {
     if (!editContent.trim() || editContent === comment.content) {
@@ -127,15 +136,15 @@ export const CommentCard = ({
                   </button>
                 )}
                 <button
-                  onClick={() => onToggleLike(comment, currentUserId)}
-                  className={`p-1 bg-transparent border-none cursor-pointer transition-colors ${
+                  onClick={handleCommentLike}
+                  className={`p-1 rounded-full bg-transparent border-none cursor-pointer transition-colors ${
                     isLiked
                       ? 'text-[hsl(var(--delete))]'
                       : 'text-[hsl(var(--foreground-muted))]'
-                  }`}
+                  } ${likeAnimating ? 'like-bg-flash' : ''}`}
                 >
                   <Heart
-                    className={`w-[12px] h-[12px] ${isLiked ? 'fill-current' : ''}`}
+                    className={`w-[12px] h-[12px] ${isLiked ? 'fill-current' : ''} ${likeAnimating ? 'like-pop' : ''}`}
                   />
                 </button>
               </div>

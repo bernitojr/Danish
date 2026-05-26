@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FeedPost } from '../utils/types'
-import { MessageCircle, Pin, ThumbsUp, X } from 'lucide-react'
+import { Heart, MessageCircle, Pin, X } from 'lucide-react'
 import { AuthorChip } from './AuthorChip'
 import { CommentSection } from './CommentSection'
 
@@ -26,6 +26,16 @@ export const PostCard = ({
   const likeCount = post.likes.length
   const commentCount = post.comments.length
 
+  const [likeAnimating, setLikeAnimating] = useState(false)
+
+  function handleLike() {
+    onToggleLike(post, currentUserId)
+    if (!isLiked) {
+      setLikeAnimating(true)
+      setTimeout(() => setLikeAnimating(false), 600)
+    }
+  }
+
   return (
     <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border)/0.4)] rounded-[var(--radius)] overflow-hidden transition-colors">
       {/* pinned banner — conditionnel */}
@@ -35,7 +45,6 @@ export const PostCard = ({
           Épinglé par l'admin
         </div>
       )}
-
       {/* post header */}
       <div className="flex items-center justify-between gap-3 pt-[1.1rem] px-5 pb-2">
         <div className="flex items-center gap-3">
@@ -78,7 +87,6 @@ export const PostCard = ({
           </div>
         )}
       </div>
-
       {/* post body */}
       <div className="pt-1 px-5 pb-4 text-[0.9rem] text-[hsl(var(--foreground-secondary))] leading-[1.6] whitespace-pre-wrap break-words">
         <p>{post.content}</p>
@@ -112,45 +120,46 @@ export const PostCard = ({
             ))}
         </div>
       )}
-
+      {/* reaction strip + actions */}
       {/* reaction strip */}
-      <div className="flex items-center justify-between flex-wrap gap-2 py-[0.6rem] px-5 border-t border-b border-[hsl(var(--border)/0.4)] text-[0.78rem] text-[hsl(var(--foreground-muted))]">
-        <div className="flex items-center gap-[0.4rem]">
-          <span className="p-1 hover:bg-[hsl(var(--foreground)/0.1)] rounded-full">
-            <ThumbsUp className="w-[16px] h-[16px]" />
-          </span>
-          <span>{likeCount}</span>
+      <div className="border-t border-[hsl(var(--border)/0.4)] px-5 py-[0.6rem]">
+        <div className="flex items-center gap-5">
+          {/* like */}
+          <button
+            onClick={handleLike}
+            className={`flex items-center gap-[0.35rem] bg-transparent border-none cursor-pointer transition-colors p-[0.4rem] rounded-full ${
+              isLiked
+                ? 'text-[hsl(var(--delete))] bg-[hsl(var(--delete)/0.1)]'
+                : 'text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]'
+            } ${likeAnimating ? 'like-bg-flash' : ''}`}
+          >
+            <Heart
+              className={`w-[18px] h-[18px] ${isLiked ? 'fill-current' : ''} ${likeAnimating ? 'like-pop' : ''}`}
+            />
+            {likeCount > 0 && (
+              <span className="font-mono text-[0.90rem] font-medium">
+                {likeCount}
+              </span>
+            )}
+          </button>
+
+          {/* commenter */}
+          <button
+            onClick={() => setIsCommentOpen((prev) => !prev)}
+            className={`flex items-center gap-[0.35rem] bg-transparent border-none cursor-pointer transition-colors p-0 ${
+              isCommentOpen
+                ? 'text-[hsl(var(--foreground-muted))]'
+                : 'text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]'
+            }`}
+          >
+            <MessageCircle className="w-[18px] h-[18px]" />
+            {commentCount > 0 && (
+              <span className="font-mono text-[0.90rem] font-medium">
+                {commentCount}
+              </span>
+            )}
+          </button>
         </div>
-
-        <div className="flex items-center gap-[0.4rem]">
-          <span className="p-1 hover:bg-[hsl(var(--foreground)/0.1)] rounded-full">
-            <MessageCircle className="w-[16px] h-[16px]" />
-          </span>
-          <span>{commentCount}</span>
-        </div>
-      </div>
-
-      {/* post actions */}
-      <div className="flex gap-1 py-[0.4rem] px-[0.6rem]">
-        <button
-          className={`flex-1 flex items-center justify-center gap-[0.45rem] bg-transparent border-none py-[0.6rem] px-[0.5rem] rounded-[calc(var(--radius)-4px)] font-sans text-[0.8rem] font-medium cursor-pointer transition-colors ${
-            isLiked
-              ? 'text-[hsl(var(--primary))]'
-              : 'text-[hsl(var(--foreground-muted))]'
-          }`}
-          onClick={() => onToggleLike(post, currentUserId)}
-        >
-          <ThumbsUp className="w-[16px] h-[16px]" />
-          Like
-        </button>
-
-        <button
-          className="flex-1 flex items-center justify-center gap-[0.45rem] bg-transparent border-none py-[0.6rem] px-[0.5rem] rounded-[calc(var(--radius)-4px)] font-sans text-[0.8rem] font-medium text-[hsl(var(--foreground-muted))] cursor-pointer transition-colors"
-          onClick={() => setIsCommentOpen((prev) => !prev)}
-        >
-          <MessageCircle className="w-[16px] h-[16px]" />
-          Comment
-        </button>
       </div>
       {/* comment section */}
       {isCommentOpen && (

@@ -60,3 +60,25 @@ h1, h2, h3, h4, h5, h6 {
 [data-mode='signup'].card-container{
   border-top: 2px solid hsl(var(--accent));
 }
+
+@keyframes like-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.5); }
+  50%  { transform: scale(0.85); }
+  75%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes like-bg-flash {
+  0%   { background-color: transparent; }
+  25%  { background-color: hsl(230 53% 64% / 0.15); }
+  100% { background-color: transparent; }
+}
+
+.like-pop {
+  animation: like-pop 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.like-bg-flash {
+  animation: like-bg-flash 0.5s ease-out;
+}
