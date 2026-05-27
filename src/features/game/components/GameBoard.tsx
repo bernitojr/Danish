@@ -1,16 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/features/game/store/gameStore'
 import { useGameLog } from '@/features/game/hooks/useGameLog'
-import { PlayerZone } from './PlayerZone'
-import { GameCard } from './GameCard'
 import { EndScreen } from './EndScreen'
-import { LogPanel } from './LogPanel'
-import type { BotDifficulty, Card, GameState, Player } from '@/features/game/utils/types'
+import { BotZone } from './BotZone'
+import { CentrePiles } from './CentrePiles'
+import { PreparationPanel } from './PreparationPanel'
+import { HumanZone } from './HumanZone'
+import { GameSidebar } from './GameSidebar'
+import type { Card, GameState } from '@/features/game/utils/types'
 import { useGameResult } from '@/features/profil/hooks/useGameResult'
-import { useAuthStore } from '@/stores/useAuthStore'
-import { usePublicProfile } from '@/features/profil/hooks/usePublicProfile'
-
-const EMOTES = ['😊', '😐', '😍', '😵']
+import { GameBoardProvider } from '@/features/game/contexts/GameBoardContext'
+import { useBubbles } from '@/features/game/contexts/BubbleContext'
 
 const BOT_DELAY_MS = { easy: 1200, medium: 2000, hard: 2500 } as const
 
@@ -23,40 +23,28 @@ const SUIT_NAME: Record<Card['suit'], string> = {
 }
 
 export function GameBoard() {
+  // ── Store / context hooks ────────────────────────────────────────────────
   const {
     gameState,
     isPlayerTurn,
     playCards,
-    swapCard,
-    setReady,
     triggerBotTurn,
-    takePile,
-    passTurn,
     undoLastMove,
     stateHistory,
     sendEmote,
     resetGame,
     startGame,
     difficulty,
-    isDebugMode,
-    setRulesMode,
-    setDifficulty,
   } = useGameStore()
-  const { user, profile } = useAuthStore()
-  const { data: publicProfile } = usePublicProfile(user?.id ?? null)
-  const activeTitle = publicProfile
-    ? (publicProfile.allTitles.find(
-        (t) => t.id === publicProfile.active_title_id
-      )?.name ?? null)
-    : null
-  const [localDiffIndex, setLocalDiffIndex] = useState(1)
+  const { setBubbles } = useBubbles()
+
+  // ── Local state ──────────────────────────────────────────────────────────
   const [pendingAce, setPendingAce] = useState<Card | null>(null)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [hiddenPending, setHiddenPending] = useState<Card | null>(null)
   const [revealingHidden, setRevealingHidden] = useState<Card | null>(null)
   const [cutReveal, setCutReveal] = useState<Card | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
-  const [bubbles, setBubbles] = useState<Record<string, string>>({})
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
   const [showEnd, setShowEnd] = useState(true)
   const prevGsRef = useRef<GameState | null>(null)
@@ -68,6 +56,7 @@ export function GameBoard() {
   const lastPlayRef = useRef<{ playerId: string; card: Card } | null>(null)
   const { push: addLog } = useGameLog(gameState, isPlayerTurn)
 
+  // ── Effects ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const prev = prevGsRef.current
     prevGsRef.current = gameState
@@ -202,6 +191,7 @@ export function GameBoard() {
 
   useEffect(() => {
     if (!isPlayerTurn) {
+      // eslint-disable-next-line react-compiler/react-compiler
       setPendingAce(null)
       setSelectedCards([])
       setHiddenPending(null)
@@ -210,6 +200,7 @@ export function GameBoard() {
   }, [isPlayerTurn])
   useEffect(() => {
     if (gameState?.phase !== 'PLAYING') {
+      // eslint-disable-next-line react-compiler/react-compiler
       setGameStarted(false)
       return
     }
@@ -217,6 +208,7 @@ export function GameBoard() {
     return () => clearTimeout(t)
   }, [gameState?.phase])
   useEffect(() => {
+    // eslint-disable-next-line react-compiler/react-compiler
     if (gameState?.phase === 'PREPARATION') setShowEnd(true)
   }, [gameState?.phase])
 
@@ -227,29 +219,16 @@ export function GameBoard() {
     setBubbles({ [lastEmote.playerId]: lastEmote.emote })
     const t = setTimeout(() => setBubbles({}), 3500)
     return () => clearTimeout(t)
-  }, [lastEmote?.timestamp])
+  }, [lastEmote, setBubbles])
 
-  if (!gameState)
-    return (
-      <div className="flex items-center justify-center h-screen bg-green-900 text-white">
-        <p>No game in progress.</p>
-      </div>
-    )
-
-  const {
-    players,
-    pile,
-    deck,
-    currentPlayerIndex,
-    validMoves,
-    bestMove,
-    phase,
-    finishOrder,
-    turnContext,
-  } = gameState
-  const [human, bot1, bot2, bot3] = players
-  const isPreparing = phase === 'PREPARATION'
+  // ── Derived values (before early return — gameState may be null) ─────────
+  const human = gameState?.players[0]
+  const pile = useMemo(() => gameState?.pile ?? [], [gameState?.pile])
+  const validMoves = useMemo(() => gameState?.validMoves ?? [], [gameState?.validMoves])
+  const turnContext = gameState?.turnContext ?? null
+  const isPreparing = gameState?.phase === 'PREPARATION'
   const inHiddenMode =
+    human != null &&
     human.hand.length === 0 &&
     human.visibleCards.length === 0 &&
     human.hiddenCards.length > 0
@@ -261,9 +240,13 @@ export function GameBoard() {
     validMoves.length === 0 &&
     !inHiddenMode
   const canPassTurn = cannotPlay && pile.length === 0
-  const pileTop3 = pile.slice(-3)
+  const pileRing =
+    (selectedCards.length > 0 || hiddenPending) && !pendingAce
+      ? 'ring-2 ring-blue-400 animate-pulse'
+      : ''
 
-  function handleCardClick(card: Card) {
+  // ── Handlers (before early return) ──────────────────────────────────────
+  const handleCardClick = useCallback((card: Card) => {
     if (isPreparing || !isPlayerTurn || pendingAce) return
     if (inHiddenMode) {
       setHiddenPending(card)
@@ -276,9 +259,9 @@ export function GameBoard() {
           ? [card]
           : [...prev, card]
     )
-  }
+  }, [isPreparing, isPlayerTurn, pendingAce, inHiddenMode])
 
-  function handlePileClick() {
+  const handlePileClick = useCallback(() => {
     if (revealingHidden || cutReveal) return
     if (inHiddenMode) {
       if (!hiddenPending) return
@@ -303,7 +286,7 @@ export function GameBoard() {
     }
     if (
       selectedCards.every((c) => c.rank === '3') &&
-      turnContext.lastEffectiveCard?.rank === 'A'
+      turnContext?.lastEffectiveCard?.rank === 'A'
     ) {
       setPendingAce(selectedCards[0])
       return
@@ -318,7 +301,7 @@ export function GameBoard() {
         setCutReveal(null)
         cutTimerRef.current = null
         if (!playCards(tens)) {
-          const effectiveCard = turnContext.lastEffectiveCard ?? pile.at(-1)
+          const effectiveCard = turnContext?.lastEffectiveCard ?? pile.at(-1)
           setInvalidMsg(
             `Tu ne peux pas jouer ${tens[0].rank} sur ${effectiveCard?.rank ?? 'vide'}`
           )
@@ -331,7 +314,7 @@ export function GameBoard() {
       return
     }
     if (!playCards(selectedCards)) {
-      const effectiveCard = turnContext.lastEffectiveCard ?? pile.at(-1)
+      const effectiveCard = turnContext?.lastEffectiveCard ?? pile.at(-1)
       setInvalidMsg(
         `Tu ne peux pas jouer ${selectedCards[0].rank} sur ${effectiveCard?.rank ?? 'vide'}`
       )
@@ -340,578 +323,222 @@ export function GameBoard() {
       addLog(`Tu joues ${selectedCards[0].rank}`)
       setSelectedCards([])
     }
-  }
+  }, [
+    revealingHidden, cutReveal, inHiddenMode, hiddenPending,
+    selectedCards, pendingAce, turnContext, pile, playCards,
+    addLog, cutTimerRef,
+  ])
 
-  function Bubble({
-    id,
-    direction = 'up',
-  }: {
-    id: string
-    direction?: 'up' | 'down' | 'left' | 'right'
-  }) {
-    const content = bubbles[id]
-    if (!content) return null
-    const isEmoji = [...content].length <= 2
-    const posClass = {
-      up: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-      down: 'top-1/2 left-1/2 -translate-x-1/2 mt-2',
-      left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-      right: 'left-full top-1/2 -translate-y-1/2 ml-2',
-    }[direction]
+  // ── Context value (useMemo before early return) ──────────────────────────
+  const contextValue = useMemo(
+    () => ({
+      selectedCards,
+      setSelectedCards,
+      pendingAce,
+      setPendingAce,
+      hiddenPending,
+      setHiddenPending,
+      revealingHidden,
+      cutReveal,
+      invalidMsg,
+      gameStarted,
+      handleCardClick,
+      handlePileClick,
+      cannotPlay,
+      canPassTurn,
+      pileRing,
+      validMoves,
+      bestMove: gameState?.bestMove ?? null,
+      isPreparing: gameState?.phase === 'PREPARATION',
+    }),
+    [
+      selectedCards,
+      pendingAce,
+      hiddenPending,
+      revealingHidden,
+      cutReveal,
+      invalidMsg,
+      gameStarted,
+      handleCardClick,
+      handlePileClick,
+      cannotPlay,
+      canPassTurn,
+      pileRing,
+      validMoves,
+      gameState?.bestMove,
+      gameState?.phase,
+      setSelectedCards,
+      setPendingAce,
+      setHiddenPending,
+    ],
+  )
+
+  // ── Early return ─────────────────────────────────────────────────────────
+  if (!gameState)
     return (
-      <div
-        className={`absolute ${posClass} bg-black/70 rounded-xl px-3 py-1.5 z-20 text-white text-center whitespace-pre-line font-medium leading-snug shadow-lg max-w-[220px] ${isEmoji ? 'text-2xl' : 'text-xs'}`}
-      >
-        {content}
+      <div className="flex items-center justify-center h-screen bg-green-900 text-white">
+        <p>No game in progress.</p>
       </div>
     )
-  }
 
-  function BotZone({
-    player,
-    idx,
-    bubbleDirection = 'up',
-  }: {
-    player: Player
-    idx: number
-    bubbleDirection?: 'up' | 'down' | 'left' | 'right'
-  }) {
-    return (
-      <div className="relative flex justify-center">
-        <Bubble id={player.id} direction={bubbleDirection} />
-        <PlayerZone
-          player={player}
-          isCurrentPlayer={currentPlayerIndex === idx}
-          isHuman={false}
-          isPreparing={false}
-          cannotPlay={false}
-          validMoves={[]}
-          bestMove={null}
-          selectedCardIds={[]}
-          onCardClick={() => {}}
-          onSwap={() => {}}
-          isDebugMode={isDebugMode}
-        />
-        {pendingAce && !player.isFinished && (
-          <button
-            onClick={() => {
-              playCards(selectedCards, player.id)
-              setPendingAce(null)
-              setSelectedCards([])
-            }}
-            className="absolute inset-0 flex items-center justify-center bg-red-500/40 hover:bg-red-500/60 rounded-lg border-2 border-red-400 transition-colors"
-          >
-            <span className="text-white font-bold text-sm drop-shadow">
-              ⚔ Attaquer
-            </span>
-          </button>
-        )}
-      </div>
-    )
-  }
-
-  const pileRing =
-    (selectedCards.length > 0 || hiddenPending) && !pendingAce
-      ? 'ring-2 ring-blue-400 animate-pulse'
-      : ''
+  // ── Post-guard: gameState is non-null ────────────────────────────────────
+  const { players, phase, finishOrder } = gameState
+  const [, bot1, bot2, bot3] = players
 
   return (
-    <div className="flex flex-1 overflow-hidden min-h-0">
-      {/* ── Game zone (left column) ── */}
-      <div
-        className="relative flex-1 min-h-0 overflow-hidden"
-        style={{ background: 'hsl(var(--background-dark))' }}
-      >
-        {finishOrder.includes('human') && showEnd && (
-          <EndScreen
-            players={players}
-            finishOrder={finishOrder}
-            humanId="human"
-            onHide={() => setShowEnd(false)}
-            onReplay={() => {
-              resetGame()
-              startGame(human?.name ?? 'Joueur', difficulty)
-            }}
-          />
-        )}
-        {stateHistory.length > 0 && phase === 'PLAYING' && (
-          <button
-            onClick={undoLastMove}
-            className="absolute top-2 right-2 z-30 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
-            style={{
-              background: 'transparent',
-              color: 'hsl(var(--foreground-muted))',
-              border: '1px solid hsl(var(--border))',
-            }}
-          >
-            ↩ Retour
-          </button>
-        )}
-        {isPreparing && (
-          <div
-            className="absolute bottom-4 left-4 z-20 flex flex-col gap-4 rounded-lg p-5"
-            style={{
-              width: 260,
-              background: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-            }}
-          >
-            {/* Header */}
-            <div>
-              <p
-                className="text-xs uppercase tracking-widest font-bold mb-0.5"
-                style={{ color: 'hsl(var(--primary))', fontFamily: 'var(--font-display)' }}
-              >
-                Phase de préparation
-              </p>
-              <p className="text-xs" style={{ color: 'hsl(var(--foreground-muted))' }}>
-                Échange tes cartes visibles, puis choisis tes paramètres.
-              </p>
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: 1, background: 'hsl(var(--border))' }} />
-
-            {/* Difficulty slider */}
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold" style={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-display)' }}>
-                Difficulté
-              </p>
-              <div className="flex justify-between text-[0.65rem] font-medium">
-                {(['Facile', 'Moyen', 'Difficile'] as const).map((label, i) => (
-                  <span
-                    key={label}
-                    style={{
-                      color: i === localDiffIndex
-                        ? 'hsl(var(--primary))'
-                        : 'hsl(var(--foreground-muted))',
-                      fontWeight: i === localDiffIndex ? 800 : 400,
-                    }}
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-              <div className="relative h-1.5 rounded-full" style={{ background: 'hsl(var(--border))' }}>
-                <div
-                  className="absolute top-0 left-0 h-full rounded-full"
-                  style={{
-                    width: `${(localDiffIndex / 2) * 100}%`,
-                    background: 'hsl(var(--primary))',
-                    transition: 'width 0.4s cubic-bezier(0.22,1,0.36,1)',
-                  }}
-                />
-                <div
-                  className="absolute top-1/2 w-3.5 h-3.5 rounded-full pointer-events-none"
-                  style={{
-                    left: `${(localDiffIndex / 2) * 100}%`,
-                    transform: 'translate(-50%, -50%)',
-                    background: 'hsl(var(--primary))',
-                    transition: 'left 0.4s cubic-bezier(0.22,1,0.36,1)',
-                  }}
-                />
-                <input
-                  type="range" min={0} max={2} step={1}
-                  value={localDiffIndex}
-                  onChange={(e) => setLocalDiffIndex(Number(e.target.value))}
-                  className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
-                />
-              </div>
-              <p className="text-[0.65rem] min-h-[2em]" style={{ color: 'hsl(var(--foreground-muted))' }}>
-                {['Les bots jouent au hasard.', 'Quelques stratégies de base.', 'Stratégie avancée — bonne chance !'][localDiffIndex]}
-              </p>
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: 1, background: 'hsl(var(--border))' }} />
-
-            {/* Mode */}
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold" style={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-display)' }}>
-                Mode
-              </p>
-              {(['patriarchal', 'matriarchal'] as const).map((mode) => (
-                <label key={mode} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="rules-mode"
-                    value={mode}
-                    checked={gameState.config.mode === mode}
-                    onChange={() => setRulesMode(mode)}
-                  />
-                  <span className="text-xs capitalize" style={{ color: 'hsl(var(--foreground))' }}>
-                    {mode === 'patriarchal' ? 'Patriarcal' : 'Matriarcal'}
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: 1, background: 'hsl(var(--border))' }} />
-
-            {/* Submit */}
-            <button
-              onClick={() => {
-                setDifficulty(['easy', 'medium', 'hard'][localDiffIndex] as BotDifficulty)
-                setReady()
+    <GameBoardProvider value={contextValue}>
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* ── Game zone (left column) ── */}
+        <div
+          className="relative flex-1 min-h-0 overflow-hidden"
+          style={{ background: 'hsl(var(--background-dark))' }}
+        >
+          {finishOrder.includes('human') && showEnd && (
+            <EndScreen
+              players={players}
+              finishOrder={finishOrder}
+              humanId="human"
+              onHide={() => setShowEnd(false)}
+              onReplay={() => {
+                resetGame()
+                startGame(human?.name ?? 'Joueur', difficulty)
               }}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5"
+            />
+          )}
+          {stateHistory.length > 0 && phase === 'PLAYING' && (
+            <button
+              onClick={undoLastMove}
+              className="absolute top-2 right-2 z-30 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
               style={{
-                background: 'hsl(var(--primary))',
-                color: 'hsl(var(--primary-foreground))',
-                fontFamily: 'var(--font-display)',
-                boxShadow: '0 4px 14px hsl(var(--primary) / 0.25)',
+                background: 'transparent',
+                color: 'hsl(var(--foreground-muted))',
+                border: '1px solid hsl(var(--border))',
               }}
             >
-              Je suis prêt ✓
+              ↩ Retour
             </button>
-          </div>
-        )}
+          )}
+          <PreparationPanel />
 
-        {/* ── Shared container: oval table + 3×3 grid, sized + centred identically ── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 'min(1100px, 95vw)',
-            height: 'min(645px, 80vh)',
-            zIndex: 0,
-          }}
-        >
-          {/* Oval table — covers full container, behind grid */}
-          <div className="pointer-events-none absolute inset-0">
+          {/* ── Shared container: oval table + 3×3 grid, sized + centred identically ── */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 'min(1100px, 95vw)',
+              height: 'min(645px, 80vh)',
+              zIndex: 0,
+            }}
+          >
+            {/* Oval table — covers full container, behind grid */}
+            <div className="pointer-events-none absolute inset-0">
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '50%',
+                  background:
+                    'radial-gradient(ellipse at 30% 30%,#8b5a2b,#6b3a1f 60%,#3d1f0a)',
+                  boxShadow:
+                    '0 0 0 4px #8b6030,0 0 0 7px #5a3510,0 20px 80px rgba(0,0,0,0.7)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 22,
+                  borderRadius: '50%',
+                  background:
+                    'radial-gradient(ellipse at 50% 35%,#1e6b3d 0%,#1a5c35 50%,#0f3d22 100%)',
+                  boxShadow: 'inset 0 4px 30px rgba(0,0,0,0.4)',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 22,
+                  borderRadius: '50%',
+                  backgroundImage:
+                    'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px)',
+                  backgroundSize: '12px 12px',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 30,
+                  borderRadius: '50%',
+                  border: '1.5px solid rgba(180,140,40,0.2)',
+                }}
+              />
+            </div>
+
+            {/* 3×3 grid — same bounds as oval */}
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                borderRadius: '50%',
-                background:
-                  'radial-gradient(ellipse at 30% 30%,#8b5a2b,#6b3a1f 60%,#3d1f0a)',
-                boxShadow:
-                  '0 0 0 4px #8b6030,0 0 0 7px #5a3510,0 20px 80px rgba(0,0,0,0.7)',
+                zIndex: 10,
+                display: 'grid',
+                gridTemplateColumns: '1fr 2fr 1fr',
+                gridTemplateRows: '1fr 1fr 1.4fr',
               }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                inset: 22,
-                borderRadius: '50%',
-                background:
-                  'radial-gradient(ellipse at 50% 35%,#1e6b3d 0%,#1a5c35 50%,#0f3d22 100%)',
-                boxShadow: 'inset 0 4px 30px rgba(0,0,0,0.4)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                inset: 22,
-                borderRadius: '50%',
-                backgroundImage:
-                  'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px)',
-                backgroundSize: '12px 12px',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                inset: 30,
-                borderRadius: '50%',
-                border: '1.5px solid rgba(180,140,40,0.2)',
-              }}
-            />
-          </div>
+            >
+              {/* R1 C1 — empty */}
+              <div />
 
-          {/* 3×3 grid — same bounds as oval */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 10,
-              display: 'grid',
-              gridTemplateColumns: '1fr 2fr 1fr',
-              gridTemplateRows: '1fr 1fr 1.4fr',
-            }}
-          >
-            {/* R1 C1 — empty */}
-            <div />
-
-            {/* R1 C2 — Bot top (bot2) */}
-            <div className="flex items-end justify-center pb-2">
-              <BotZone player={bot2} idx={2} bubbleDirection="down" />
-            </div>
-
-            {/* R1 C3 — empty */}
-            <div />
-
-            {/* R2 C1 — Bot left (bot1) */}
-            <div className="flex items-center justify-end pr-2">
-              <BotZone player={bot1} idx={1} bubbleDirection="right" />
-            </div>
-
-            {/* R2 C2 — empty */}
-            <div />
-
-            {/* R2 C3 — Bot right (bot3) */}
-            <div className="flex items-center justify-start pl-2">
-              <BotZone player={bot3} idx={3} bubbleDirection="left" />
-            </div>
-
-            {/* R3 C1 — empty */}
-            <div />
-
-            {/* R3 C2 — empty */}
-            <div />
-
-            {/* R3 C3 — empty */}
-            <div />
-          </div>
-
-          {/* Centre piles — absolute inside the shared container */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '42%',
-              left: '50%',
-              transform: 'translate(-50%, -25%)',
-              zIndex: 20,
-            }}
-          >
-            <div className="relative flex flex-col items-center gap-2">
-              <div className="flex items-center gap-6">
-                {/* Fosse */}
-                <div className="flex flex-col items-center gap-1">
-                  <span
-                    className="text-xs"
-                    style={{ color: 'hsl(var(--primary))' }}
-                  >
-                    Fosse ({gameState.discard.length})
-                  </span>
-                  <div className="relative w-14 h-[78px]">
-                    {gameState.discard.length === 0 && (
-                      <div
-                        className="absolute inset-0 rounded-md flex items-center justify-center text-xs"
-                        style={{
-                          border: '1.5px solid hsl(var(--primary) / 0.5)',
-                          color: 'hsl(var(--primary) / 0.4)',
-                        }}
-                      >
-                        vide
-                      </div>
-                    )}
-                    {gameState.discard.length >= 3 && (
-                      <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
-                        <GameCard
-                          card={gameState.discard[gameState.discard.length - 3]}
-                          state="normal"
-                        />
-                      </div>
-                    )}
-                    {gameState.discard.length >= 2 && (
-                      <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
-                        <GameCard
-                          card={gameState.discard[gameState.discard.length - 2]}
-                          state="normal"
-                        />
-                      </div>
-                    )}
-                    {gameState.discard.length >= 1 && (
-                      <div className="absolute inset-0">
-                        <GameCard
-                          card={gameState.discard[gameState.discard.length - 1]}
-                          state="normal"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-white/60 text-xs">
-                    Pile ({pile.length})
-                  </span>
-                  <div
-                    className={`relative w-14 h-[78px] cursor-pointer rounded-md ${pileRing}`}
-                    onClick={handlePileClick}
-                  >
-                    {pile.length === 0 && !revealingHidden && !cutReveal && (
-                      <GameCard card={null} state="empty" />
-                    )}
-                    {pileTop3.length >= 3 && (
-                      <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
-                        <GameCard card={pileTop3[0]} state="normal" />
-                      </div>
-                    )}
-                    {pileTop3.length >= 2 && (
-                      <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
-                        <GameCard
-                          card={pileTop3[pileTop3.length - 2]}
-                          state="normal"
-                        />
-                      </div>
-                    )}
-                    {pileTop3.length >= 1 && (
-                      <div className="absolute inset-0">
-                        <GameCard
-                          card={pileTop3[pileTop3.length - 1]}
-                          state="normal"
-                        />
-                      </div>
-                    )}
-                    {revealingHidden && (
-                      <div className="absolute inset-0 ring-2 ring-yellow-400 rounded-md animate-pulse">
-                        <GameCard card={revealingHidden} state="normal" />
-                      </div>
-                    )}
-                    {cutReveal && (
-                      <div className="absolute inset-0 ring-2 ring-orange-400 rounded-md animate-pulse">
-                        <GameCard card={cutReveal} state="normal" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-white/60 text-xs">
-                    Deck ({deck.length})
-                  </span>
-                  {deck.length === 0 ? (
-                    <div className="w-14 h-[78px] rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm">
-                      0
-                    </div>
-                  ) : (
-                    <GameCard card={null} state="hidden" />
-                  )}
-                </div>
+              {/* R1 C2 — Bot top (bot2) */}
+              <div className="flex items-end justify-center pb-2">
+                <BotZone player={bot2} idx={2} bubbleDirection="down" />
               </div>
-              {cannotPlay && pile.length > 0 && (
-                <button
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse"
-                  style={{
-                    background: 'hsl(var(--delete))',
-                    color: 'hsl(var(--primary-foreground))',
-                    boxShadow: 'hsl(var(--delete) / 0.25) 0 4px 14px',
-                  }}
-                  onClick={takePile}
-                >
-                  Ramasser la pile
-                </button>
-              )}
-              {canPassTurn && (
-                <button
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse"
-                  style={{
-                    background: 'hsl(var(--warning))',
-                    color: 'hsl(var(--foreground-contrast))',
-                    boxShadow: 'hsl(var(--warning) / 0.25) 0 4px 14px',
-                  }}
-                  onClick={passTurn}
-                >
-                  ⏭ Passer son tour
-                </button>
-              )}
-              {invalidMsg && (
-                <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">
-                  {invalidMsg}
-                </div>
-              )}
+
+              {/* R1 C3 — empty */}
+              <div />
+
+              {/* R2 C1 — Bot left (bot1) */}
+              <div className="flex items-center justify-end pr-2">
+                <BotZone player={bot1} idx={1} bubbleDirection="right" />
+              </div>
+
+              {/* R2 C2 — empty */}
+              <div />
+
+              {/* R2 C3 — Bot right (bot3) */}
+              <div className="flex items-center justify-start pl-2">
+                <BotZone player={bot3} idx={3} bubbleDirection="left" />
+              </div>
+
+              {/* R3 C1 — empty */}
+              <div />
+
+              {/* R3 C2 — empty */}
+              <div />
+
+              {/* R3 C3 — empty */}
+              <div />
+            </div>
+
+            {/* Centre piles — absolute inside the shared container */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '42%',
+                left: '50%',
+                transform: 'translate(-50%, -25%)',
+                zIndex: 20,
+              }}
+            >
+              <CentrePiles />
             </div>
           </div>
+
+          <HumanZone />
         </div>
 
-        {/* Human zone — absolute, outside the table container to avoid clipping */}
-        <div
-          className="absolute left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
-          style={{ bottom: 8 }}
-        >
-          <Bubble id="human" direction="up" />
-          <PlayerZone
-            player={human}
-            isCurrentPlayer={currentPlayerIndex === 0}
-            isHuman={true}
-            isPreparing={isPreparing}
-            cannotPlay={cannotPlay}
-            validMoves={pendingAce ? [] : validMoves}
-            bestMove={pendingAce ? null : bestMove}
-            selectedCardIds={selectedCards.map((c) => c.id)}
-            onCardClick={handleCardClick}
-            onSwap={swapCard}
-            isDebugMode={isDebugMode}
-            profileUsername={profile?.username}
-            profileAvatarUrl={profile?.avatar_url}
-            profileTitle={activeTitle}
-          />
-          {pendingAce && (
-            <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3">
-              <span className="text-red-300 text-sm font-medium">
-                Choisissez un joueur à attaquer
-              </span>
-              <button
-                className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded"
-                onClick={() => setPendingAce(null)}
-              >
-                Annuler
-              </button>
-            </div>
-          )}
-        </div>
+        <GameSidebar />
       </div>
-
-      {/* ── Sidebar (right column) ── */}
-      <div
-        className="flex flex-col border-l"
-        style={{
-          width: 288,
-          flexShrink: 0,
-          background: 'hsl(var(--background-dark))',
-          borderColor: 'hsl(var(--border))',
-        }}
-      >
-        {/* Header */}
-        <div
-          className="flex-none"
-          style={{
-            padding: 12,
-            borderBottom: '1px solid hsl(var(--border))',
-          }}
-        >
-          <span
-            style={{
-              fontFamily: 'Montserrat, sans-serif',
-              fontWeight: 700,
-              fontSize: 11,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: 'hsl(var(--foreground-muted))',
-            }}
-          >
-            Journal de partie
-          </span>
-        </div>
-
-        {/* Log */}
-        <div className="flex-1 overflow-hidden min-h-0">
-          <LogPanel log={gameState.log ?? []} />
-        </div>
-
-        {/* Emotes */}
-        <div
-          className="flex items-center justify-center"
-          style={{ padding: 12, borderTop: '1px solid hsl(var(--border))' }}
-        >
-          <div className="grid grid-cols-2 gap-1 rounded-lg p-1.5">
-            {EMOTES.map((e) => (
-              <button
-                key={e}
-                className="flex items-center justify-center w-12 h-12 rounded-md hover:bg-white/10 transition-colors"
-                onClick={() => sendEmote('human', e)}
-              >
-                <span className="text-[36px] leading-none">{e}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+    </GameBoardProvider>
   )
 }

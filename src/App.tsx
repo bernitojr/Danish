@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
-import { GameBoard } from '@/features/game/components/GameBoard'
+import { GamePage } from '@/features/game/pages/GamePage'
 import { LandingPage } from '@/features/landing/pages/LandingPage'
 import { AuthPage } from './features/Auth/AuthPage'
 import { ProfilePage } from './features/profil/pages/ProfilePage'
@@ -39,7 +39,7 @@ function GameRoute() {
   useEffect(() => {
     if (!gameState) startGame('You', difficulty)
   }, [])
-  return <GameBoard />
+  return <GamePage />
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
