@@ -174,8 +174,8 @@ export function LeaderboardTable({
                           {entry.username}
                         </p>
                         <p className="text-xs text-[hsl(var(--foreground-muted))] font-sans">
-                          {entry.active_title ??
-                            `#DWC-${new Date().getFullYear()}`}
+
+                          {entry.active_title}
                         </p>
                       </div>
                     </div>

@@ -32,7 +32,7 @@ export function GameCard({ card, state = 'normal', onClick, disabled = false }: 
     state === 'chosen'   ? 'ring-2 ring-amber-700 shadow-[0_0_12px_rgba(180,83,9,0.5)]' :
     '';
 
-  const baseClass = 'w-16 h-[89px] rounded-md select-none flex-shrink-0 transition-all duration-150';
+  const baseClass = 'w-14 h-[78px] rounded-md select-none flex-shrink-0 transition-all duration-150';
   const cursorClass = disabled
     ? 'opacity-50 cursor-not-allowed'
     : onClick

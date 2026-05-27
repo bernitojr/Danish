@@ -35,10 +35,10 @@ function FanRow({ cards, isHidden, validMoves, bestMove, selectedIds, onCardClic
   const n = cards.length;
   const spread = n <= 1 ? 0 : Math.min(n * 6, 24);
   const angles = cards.map((_, i) => n <= 1 ? 0 : -spread / 2 + (spread / (n - 1)) * i);
-  const overlap = 28;
+  const overlap = 25;
   const width = n <= 1 ? 64 : (n - 1) * overlap + 64;
   return (
-    <div className="relative" style={{ width, height: 110 }}>
+    <div className="relative" style={{ width, height: 95 }}>
       {cards.map((card, i) => {
         const rot = angles[i] ?? 0;
         const ty = Math.abs(rot) * 0.5;
@@ -177,7 +177,8 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
         <PlayerHeader
           username={profileUsername ?? player.name}
           avatarUrl={profileAvatarUrl ?? null}
-          activeTitle={profileTitle ?? player.title ?? null}
+          activeTitle={profileTitle ?? null}
+          compact={true}
         />
       </div>
     </div>

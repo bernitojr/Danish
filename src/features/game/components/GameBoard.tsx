@@ -44,7 +44,9 @@ export function GameBoard() {
   const { user, profile } = useAuthStore()
   const { data: publicProfile } = usePublicProfile(user?.id ?? null)
   const activeTitle = publicProfile
-    ? (publicProfile.allTitles.find((t) => t.id === publicProfile.active_title_id)?.name ?? null)
+    ? (publicProfile.allTitles.find(
+        (t) => t.id === publicProfile.active_title_id
+      )?.name ?? null)
     : null
   const [pendingAce, setPendingAce] = useState<Card | null>(null)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
@@ -397,66 +399,9 @@ export function GameBoard() {
     <div className="flex flex-1 overflow-hidden min-h-0">
       {/* ── Game zone (left column) ── */}
       <div
-        className="relative flex-1 flex flex-col overflow-hidden min-h-0"
+        className="relative flex-1 min-h-0 overflow-hidden"
         style={{ background: 'hsl(var(--background-dark))' }}
       >
-        {/* ── Oval poker table ── */}
-        <div
-          className="pointer-events-none absolute"
-          style={{
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%,-50%)',
-            width: 'min(1100px,95vw)',
-            height: 'min(645px,80vh)',
-            zIndex: 0,
-          }}
-        >
-          {/* Wood rim */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              background:
-                'radial-gradient(ellipse at 30% 30%,#8b5a2b,#6b3a1f 60%,#3d1f0a)',
-              boxShadow:
-                '0 0 0 4px #8b6030,0 0 0 7px #5a3510,0 20px 80px rgba(0,0,0,0.7)',
-            }}
-          />
-          {/* Felt */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 22,
-              borderRadius: '50%',
-              background:
-                'radial-gradient(ellipse at 50% 35%,#1e6b3d 0%,#1a5c35 50%,#0f3d22 100%)',
-              boxShadow: 'inset 0 4px 30px rgba(0,0,0,0.4)',
-            }}
-          />
-          {/* Felt weave */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 22,
-              borderRadius: '50%',
-              backgroundImage:
-                'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px)',
-              backgroundSize: '12px 12px',
-            }}
-          />
-          {/* Gold stripe */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 30,
-              borderRadius: '50%',
-              border: '1.5px solid rgba(180,140,40,0.2)',
-            }}
-          />
-        </div>
-
         {finishOrder.includes('human') && showEnd && (
           <EndScreen
             players={players}
@@ -477,163 +422,6 @@ export function GameBoard() {
             ↩ Retour
           </button>
         )}
-
-        {/* ── Row 1 : Bot top ── */}
-        <div className="relative z-10 flex-none flex items-end justify-center pt-4 pb-2">
-          <BotZone player={bot2} idx={2} />
-        </div>
-
-        {/* ── Row 2 : Centre ── */}
-        <div className="relative z-10 flex flex-1 items-center justify-center gap-12 min-h-0">
-          <BotZone player={bot1} idx={1} />
-          <div className="relative flex flex-col items-center gap-2">
-            <div className="flex items-center gap-6">
-              {/* Fosse */}
-              <div className="flex flex-col items-center gap-1">
-                <span
-                  className="text-xs"
-                  style={{ color: 'hsl(var(--primary))' }}
-                >
-                  Fosse ({gameState.discard.length})
-                </span>
-                <div
-                  className="w-16 h-[89px] rounded-md flex items-center justify-center"
-                  style={{ border: '1.5px solid hsl(var(--primary) / 0.5)' }}
-                >
-                  {gameState.discard.length > 0 ? (
-                    <GameCard
-                      card={gameState.discard[gameState.discard.length - 1]}
-                      state="normal"
-                    />
-                  ) : (
-                    <span
-                      className="text-xs"
-                      style={{ color: 'hsl(var(--primary) / 0.4)' }}
-                    >
-                      vide
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-white/60 text-xs">
-                  Pile ({pile.length})
-                </span>
-                <div
-                  className={`relative w-16 h-[89px] cursor-pointer rounded-md ${pileRing}`}
-                  onClick={handlePileClick}
-                >
-                  {pile.length === 0 && !revealingHidden && !cutReveal && (
-                    <GameCard card={null} state="empty" />
-                  )}
-                  {pileTop3.length >= 3 && (
-                    <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
-                      <GameCard card={pileTop3[0]} state="normal" />
-                    </div>
-                  )}
-                  {pileTop3.length >= 2 && (
-                    <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
-                      <GameCard
-                        card={pileTop3[pileTop3.length - 2]}
-                        state="normal"
-                      />
-                    </div>
-                  )}
-                  {pileTop3.length >= 1 && (
-                    <div className="absolute inset-0">
-                      <GameCard
-                        card={pileTop3[pileTop3.length - 1]}
-                        state="normal"
-                      />
-                    </div>
-                  )}
-                  {revealingHidden && (
-                    <div className="absolute inset-0 ring-2 ring-yellow-400 rounded-md animate-pulse">
-                      <GameCard card={revealingHidden} state="normal" />
-                    </div>
-                  )}
-                  {cutReveal && (
-                    <div className="absolute inset-0 ring-2 ring-orange-400 rounded-md animate-pulse">
-                      <GameCard card={cutReveal} state="normal" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-white/60 text-xs">
-                  Deck ({deck.length})
-                </span>
-                {deck.length === 0 ? (
-                  <div className="w-16 h-[89px] rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm">
-                    0
-                  </div>
-                ) : (
-                  <GameCard card={null} state="hidden" />
-                )}
-              </div>
-            </div>
-            {cannotPlay && pile.length > 0 && (
-              <button
-                className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-sm ring-2 ring-red-400 animate-pulse"
-                onClick={takePile}
-              >
-                Ramasser la pile 📥
-              </button>
-            )}
-            {canPassTurn && (
-              <button
-                className="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded text-sm ring-2 ring-yellow-400 animate-pulse"
-                onClick={passTurn}
-              >
-                Passer son tour ⏭
-              </button>
-            )}
-            {invalidMsg && (
-              <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">
-                {invalidMsg}
-              </div>
-            )}
-          </div>
-          <BotZone player={bot3} idx={3} />
-        </div>
-
-        {/* ── Row 3 : Human player zone — shrink-wraps content, no fixed height ── */}
-        <div className="relative z-10 flex-none flex flex-col items-center justify-start pt-2 overflow-visible">
-          <div className="relative flex flex-col items-center gap-2 overflow-visible">
-            <Bubble id="human" />
-            <PlayerZone
-              player={human}
-              isCurrentPlayer={currentPlayerIndex === 0}
-              isHuman={true}
-              isPreparing={isPreparing}
-              cannotPlay={cannotPlay}
-              validMoves={pendingAce ? [] : validMoves}
-              bestMove={pendingAce ? null : bestMove}
-              selectedCardIds={selectedCards.map((c) => c.id)}
-              onCardClick={handleCardClick}
-              onSwap={swapCard}
-              isDebugMode={isDebugMode}
-              profileUsername={profile?.username}
-              profileAvatarUrl={profile?.avatar_url}
-              profileTitle={activeTitle}
-            />
-            {pendingAce && (
-              <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3">
-                <span className="text-red-300 text-sm font-medium">
-                  Choisissez un joueur à attaquer
-                </span>
-                <button
-                  className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded"
-                  onClick={() => setPendingAce(null)}
-                >
-                  Annuler
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Prep panel — absolutely positioned bottom-left, visible only during PREPARATION */}
         {isPreparing && (
           <div className="absolute bottom-4 left-4 z-20" style={{ width: 220 }}>
             <div className="w-full px-3 py-2 bg-black/50 rounded-lg border border-yellow-500/40 flex flex-col items-stretch gap-1.5">
@@ -671,6 +459,268 @@ export function GameBoard() {
             </div>
           </div>
         )}
+
+        {/* ── Shared container: oval table + 3×3 grid, sized + centred identically ── */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 'min(1100px, 95vw)',
+            height: 'min(645px, 80vh)',
+            zIndex: 0,
+          }}
+        >
+          {/* Oval table — covers full container, behind grid */}
+          <div className="pointer-events-none absolute inset-0">
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                background:
+                  'radial-gradient(ellipse at 30% 30%,#8b5a2b,#6b3a1f 60%,#3d1f0a)',
+                boxShadow:
+                  '0 0 0 4px #8b6030,0 0 0 7px #5a3510,0 20px 80px rgba(0,0,0,0.7)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 22,
+                borderRadius: '50%',
+                background:
+                  'radial-gradient(ellipse at 50% 35%,#1e6b3d 0%,#1a5c35 50%,#0f3d22 100%)',
+                boxShadow: 'inset 0 4px 30px rgba(0,0,0,0.4)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 22,
+                borderRadius: '50%',
+                backgroundImage:
+                  'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px)',
+                backgroundSize: '12px 12px',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 30,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(180,140,40,0.2)',
+              }}
+            />
+          </div>
+
+          {/* 3×3 grid — same bounds as oval */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 10,
+              display: 'grid',
+              gridTemplateColumns: '1fr 2fr 1fr',
+              gridTemplateRows: '1fr 1fr 1.4fr',
+            }}
+          >
+            {/* R1 C1 — empty */}
+            <div />
+
+            {/* R1 C2 — Bot top (bot2) */}
+            <div className="flex items-end justify-center pb-2">
+              <BotZone player={bot2} idx={2} />
+            </div>
+
+            {/* R1 C3 — empty */}
+            <div />
+
+            {/* R2 C1 — Bot left (bot1) */}
+            <div className="flex items-center justify-end pr-2">
+              <BotZone player={bot1} idx={1} />
+            </div>
+
+            {/* R2 C2 — empty */}
+            <div />
+
+            {/* R2 C3 — Bot right (bot3) */}
+            <div className="flex items-center justify-start pl-2">
+              <BotZone player={bot3} idx={3} />
+            </div>
+
+            {/* R3 C1 — empty */}
+            <div />
+
+            {/* R3 C2 — empty */}
+            <div />
+
+            {/* R3 C3 — empty */}
+            <div />
+          </div>
+
+          {/* Centre piles — absolute inside the shared container */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '42%',
+              left: '50%',
+              transform: 'translate(-50%, -25%)',
+              zIndex: 20,
+            }}
+          >
+            <div className="relative flex flex-col items-center gap-2">
+              <div className="flex items-center gap-6">
+                {/* Fosse */}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs" style={{ color: 'hsl(var(--primary))' }}>
+                    Fosse ({gameState.discard.length})
+                  </span>
+                  <div className="relative w-14 h-[78px]">
+                    {gameState.discard.length === 0 && (
+                      <div
+                        className="absolute inset-0 rounded-md flex items-center justify-center text-xs"
+                        style={{ border: '1.5px solid hsl(var(--primary) / 0.5)', color: 'hsl(var(--primary) / 0.4)' }}
+                      >
+                        vide
+                      </div>
+                    )}
+                    {gameState.discard.length >= 3 && (
+                      <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
+                        <GameCard card={gameState.discard[gameState.discard.length - 3]} state="normal" />
+                      </div>
+                    )}
+                    {gameState.discard.length >= 2 && (
+                      <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
+                        <GameCard card={gameState.discard[gameState.discard.length - 2]} state="normal" />
+                      </div>
+                    )}
+                    {gameState.discard.length >= 1 && (
+                      <div className="absolute inset-0">
+                        <GameCard card={gameState.discard[gameState.discard.length - 1]} state="normal" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-white/60 text-xs">
+                    Pile ({pile.length})
+                  </span>
+                  <div
+                    className={`relative w-14 h-[78px] cursor-pointer rounded-md ${pileRing}`}
+                    onClick={handlePileClick}
+                  >
+                    {pile.length === 0 && !revealingHidden && !cutReveal && (
+                      <GameCard card={null} state="empty" />
+                    )}
+                    {pileTop3.length >= 3 && (
+                      <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
+                        <GameCard card={pileTop3[0]} state="normal" />
+                      </div>
+                    )}
+                    {pileTop3.length >= 2 && (
+                      <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
+                        <GameCard
+                          card={pileTop3[pileTop3.length - 2]}
+                          state="normal"
+                        />
+                      </div>
+                    )}
+                    {pileTop3.length >= 1 && (
+                      <div className="absolute inset-0">
+                        <GameCard
+                          card={pileTop3[pileTop3.length - 1]}
+                          state="normal"
+                        />
+                      </div>
+                    )}
+                    {revealingHidden && (
+                      <div className="absolute inset-0 ring-2 ring-yellow-400 rounded-md animate-pulse">
+                        <GameCard card={revealingHidden} state="normal" />
+                      </div>
+                    )}
+                    {cutReveal && (
+                      <div className="absolute inset-0 ring-2 ring-orange-400 rounded-md animate-pulse">
+                        <GameCard card={cutReveal} state="normal" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-white/60 text-xs">
+                    Deck ({deck.length})
+                  </span>
+                  {deck.length === 0 ? (
+                    <div className="w-14 h-[78px] rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm">
+                      0
+                    </div>
+                  ) : (
+                    <GameCard card={null} state="hidden" />
+                  )}
+                </div>
+              </div>
+              {cannotPlay && pile.length > 0 && (
+                <button
+                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-sm ring-2 ring-red-400 animate-pulse"
+                  onClick={takePile}
+                >
+                  Ramasser la pile 📥
+                </button>
+              )}
+              {canPassTurn && (
+                <button
+                  className="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded text-sm ring-2 ring-yellow-400 animate-pulse"
+                  onClick={passTurn}
+                >
+                  Passer son tour ⏭
+                </button>
+              )}
+              {invalidMsg && (
+                <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">
+                  {invalidMsg}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Human zone — absolute, outside the table container to avoid clipping */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+          style={{ bottom: 8 }}
+        >
+          <Bubble id="human" />
+          <PlayerZone
+            player={human}
+            isCurrentPlayer={currentPlayerIndex === 0}
+            isHuman={true}
+            isPreparing={isPreparing}
+            cannotPlay={cannotPlay}
+            validMoves={pendingAce ? [] : validMoves}
+            bestMove={pendingAce ? null : bestMove}
+            selectedCardIds={selectedCards.map((c) => c.id)}
+            onCardClick={handleCardClick}
+            onSwap={swapCard}
+            isDebugMode={isDebugMode}
+            profileUsername={profile?.username}
+            profileAvatarUrl={profile?.avatar_url}
+            profileTitle={activeTitle}
+          />
+          {pendingAce && (
+            <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3">
+              <span className="text-red-300 text-sm font-medium">
+                Choisissez un joueur à attaquer
+              </span>
+              <button
+                className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-sm rounded"
+                onClick={() => setPendingAce(null)}
+              >
+                Annuler
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Sidebar (right column) ── */}
