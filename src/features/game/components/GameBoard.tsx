@@ -11,6 +11,7 @@ import type { Card, GameState } from '@/features/game/utils/types'
 import { useGameResult } from '@/features/profil/hooks/useGameResult'
 import { GameBoardProvider } from '@/features/game/contexts/GameBoardContext'
 import { useBubbles } from '@/features/game/contexts/BubbleContext'
+import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 
 const BOT_DELAY_MS = { easy: 1200, medium: 2000, hard: 2500 } as const
 
@@ -28,6 +29,7 @@ export function GameBoard() {
     gameState,
     isPlayerTurn,
     playCards,
+    takePile,
     triggerBotTurn,
     undoLastMove,
     stateHistory,
@@ -37,6 +39,7 @@ export function GameBoard() {
     difficulty,
   } = useGameStore()
   const { setBubbles } = useBubbles()
+  const { flyCardToPile, flyPileToHand, flyPileToDiscard, flyAttack } = useCardAnimation()
 
   // ── Local state ──────────────────────────────────────────────────────────
   const [pendingAce, setPendingAce] = useState<Card | null>(null)
@@ -66,6 +69,33 @@ export function GameBoard() {
     const discardGrew = gameState.discard.length > prev.discard.length
     const pileCleared =
       prev.pile.length > 0 && gameState.pile.length === 0 && !discardGrew
+
+    // Detect Ace attack: a card was played AND attackTarget is set
+    // Covers both direct Ace and 3 mirroring an Ace
+    const newAttackTarget = gameState.turnContext?.attackTarget ?? null
+    const cardJustPlayed = pileGrew || discardGrew
+    const attackJustPlayed = cardJustPlayed && newAttackTarget !== null
+    if (attackJustPlayed && newAttackTarget) {
+      const attacker = prev.players[prev.currentPlayerIndex]
+      if (attacker) flyAttack(attacker.id, newAttackTarget)
+    }
+
+    // Sweep animation: pile was cleared into the discard (10-cut or 4-of-a-kind)
+    const anyCut =
+      discardGrew &&
+      prev.pile.length > 0 &&
+      gameState.pile.length === 0
+    if (anyCut) {
+      flyPileToDiscard(prev.pile.map((c) => c.id))
+    }
+
+    // Pile taken by a bot (human is handled synchronously in handleTakePile)
+    if (pileCleared && !anyCut) {
+      const taker = prev.players[prev.currentPlayerIndex]
+      if (taker && taker.id !== 'human') {
+        flyPileToHand(prev.pile.map((c) => c.id), taker.id)
+      }
+    }
 
     // Bot 10 cut visual: stage a 700ms overlay so the 10 stays visible on
     // top of the pile before the display clears. Human 10 plays are
@@ -181,7 +211,7 @@ export function GameBoard() {
     }
 
     if (emote) sendEmote(emote.playerId, emote.message)
-  }, [gameState, sendEmote])
+  }, [gameState, sendEmote, flyPileToDiscard, flyAttack])
 
   useEffect(() => {
     if (!gameState || gameState.phase !== 'PLAYING' || isPlayerTurn) return
@@ -261,6 +291,12 @@ export function GameBoard() {
     )
   }, [isPreparing, isPlayerTurn, pendingAce, inHiddenMode])
 
+  const handleTakePile = useCallback(() => {
+    if (pile.length === 0) return
+    flyPileToHand(pile.map((c) => c.id), 'human')
+    takePile()
+  }, [flyPileToHand, pile, takePile])
+
   const handlePileClick = useCallback(() => {
     if (revealingHidden || cutReveal) return
     if (inHiddenMode) {
@@ -320,13 +356,14 @@ export function GameBoard() {
       )
       setTimeout(() => setInvalidMsg(null), 2500)
     } else {
+      flyCardToPile(selectedCards)
       addLog(`Tu joues ${selectedCards[0].rank}`)
       setSelectedCards([])
     }
   }, [
     revealingHidden, cutReveal, inHiddenMode, hiddenPending,
     selectedCards, pendingAce, turnContext, pile, playCards,
-    addLog, cutTimerRef,
+    addLog, cutTimerRef, flyCardToPile,
   ])
 
   // ── Context value (useMemo before early return) ──────────────────────────
@@ -344,12 +381,14 @@ export function GameBoard() {
       gameStarted,
       handleCardClick,
       handlePileClick,
+      handleTakePile,
       cannotPlay,
       canPassTurn,
       pileRing,
       validMoves,
       bestMove: gameState?.bestMove ?? null,
       isPreparing: gameState?.phase === 'PREPARATION',
+      attackTarget: turnContext?.attackTarget ?? null,
     }),
     [
       selectedCards,
@@ -361,12 +400,14 @@ export function GameBoard() {
       gameStarted,
       handleCardClick,
       handlePileClick,
+      handleTakePile,
       cannotPlay,
       canPassTurn,
       pileRing,
       validMoves,
       gameState?.bestMove,
       gameState?.phase,
+      turnContext?.attackTarget,
       setSelectedCards,
       setPendingAce,
       setHiddenPending,

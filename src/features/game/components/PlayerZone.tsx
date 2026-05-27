@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { Card, Player } from '@/features/game/utils/types'
 import { GameCard } from './GameCard'
 import { PlayerHeader } from '@/shared/PlayerHeader'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 
 type CardStateResult = 'normal' | 'selected' | 'optimal' | 'chosen'
 function cardState(
@@ -48,6 +50,7 @@ function FanRow({
   selectedIds: string[]
   onCardClick: (c: Card) => void
 }) {
+  const { registerCardRef } = useCardAnimation()
   const n = cards.length
   const spread = n <= 1 ? 0 : Math.min(n * 6, 24)
   const angles = cards.map((_, i) =>
@@ -57,31 +60,39 @@ function FanRow({
   const width = n <= 1 ? 64 : (n - 1) * overlap + 64
   return (
     <div className="relative" style={{ width, height: 95 }}>
-      {cards.map((card, i) => {
-        const rot = angles[i] ?? 0
-        const ty = Math.abs(rot) * 0.5
-        return (
-          <div
-            key={card.id}
-            className="absolute"
-            style={{
-              left: i * overlap,
-              transform: `rotate(${rot}deg) translateY(${ty}px)`,
-              transformOrigin: 'bottom center',
-            }}
-          >
-            <GameCard
-              card={isHidden ? null : card}
-              state={
-                isHidden
-                  ? 'hidden'
-                  : cardState(card, validMoves, bestMove, selectedIds)
-              }
-              onClick={isHidden ? undefined : () => onCardClick(card)}
-            />
-          </div>
-        )
-      })}
+      <AnimatePresence>
+        {cards.map((card, i) => {
+          const rot = angles[i] ?? 0
+          const ty = Math.abs(rot) * 0.5
+          return (
+            <motion.div
+              key={card.id}
+              ref={(el) => registerCardRef(card.id, el)}
+              className="absolute"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              style={{
+                left: i * overlap,
+                rotate: rot,
+                translateY: ty,
+                transformOrigin: 'bottom center',
+              }}
+            >
+              <GameCard
+                card={isHidden ? null : card}
+                state={
+                  isHidden
+                    ? 'hidden'
+                    : cardState(card, validMoves, bestMove, selectedIds)
+                }
+                onClick={isHidden ? undefined : () => onCardClick(card)}
+              />
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
     </div>
   )
 }
@@ -110,7 +121,6 @@ export function PlayerZone({
   const visibleEmpty = player.visibleCards.length === 0
   const hiddenActive = !isPreparing && handEmpty && visibleEmpty
 
-  // UX 1 — sort by value ascending (weakest left, strongest right)
   const sortedHand = [...player.hand].sort((a, b) => a.value - b.value)
   const sortedVisible = [...player.visibleCards].sort(
     (a, b) => a.value - b.value
@@ -130,6 +140,7 @@ export function PlayerZone({
       onCardClick(card)
     }
   }
+
   function handleVisibleClick(card: Card) {
     if (isPreparing) {
       if (pendingSwap?.zone === 'hand') {
@@ -186,7 +197,6 @@ export function PlayerZone({
   )
 
   if (!isHuman) {
-    // UX 5 — cap displayed bot hand at 5 cards, show "+N" badge for extras
     const displayHand = player.hand.slice(0, 5)
     const extra = player.hand.length - 5
     return (

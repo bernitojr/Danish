@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion'
 import { useGameStore } from '@/features/game/store/gameStore'
 import { useGameBoardContext } from '@/features/game/contexts/GameBoardContext'
+import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 import { Bubble } from './Bubble'
 import { PlayerZone } from './PlayerZone'
 import type { Player } from '@/features/game/utils/types'
@@ -14,10 +16,17 @@ export function BotZone({ player, idx, bubbleDirection = 'up' }: BotZoneProps) {
   const currentPlayerIndex = useGameStore(s => s.gameState?.currentPlayerIndex ?? 0)
   const isDebugMode = useGameStore(s => s.isDebugMode)
   const playCards = useGameStore(s => s.playCards)
-  const { pendingAce, setPendingAce, selectedCards, setSelectedCards } = useGameBoardContext()
+  const { pendingAce, setPendingAce, selectedCards, setSelectedCards, attackTarget } = useGameBoardContext()
+  const { registerPlayerRef } = useCardAnimation()
+  const isBeingAttacked = attackTarget === player.id
 
   return (
-    <div className="relative flex justify-center">
+    <motion.div
+      ref={(el) => registerPlayerRef(player.id, el)}
+      className="relative flex justify-center"
+      animate={isBeingAttacked ? { x: [0, -12, 12, -10, 10, -6, 6, 0] } : { x: 0 }}
+      transition={{ duration: 0.5, delay: 0.6 }}
+    >
       <Bubble id={player.id} direction={bubbleDirection} />
       <PlayerZone
         player={player}
@@ -44,6 +53,6 @@ export function BotZone({ player, idx, bubbleDirection = 'up' }: BotZoneProps) {
           <span className="text-white font-bold text-sm drop-shadow">⚔ Attaquer</span>
         </button>
       )}
-    </div>
+    </motion.div>
   )
 }

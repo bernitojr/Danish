@@ -20,6 +20,8 @@ interface GameBoardContextValue {
   validMoves: Card[]
   bestMove: Card | null
   isPreparing: boolean
+  handleTakePile: () => void
+  attackTarget: string | null
 }
 
 const GameBoardContext = createContext<GameBoardContextValue | null>(null)
