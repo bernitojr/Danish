@@ -1,5 +1,5 @@
-import { Hero } from './Hero'
-import { QuickAccessCards } from './QuickAccessCard'
+import { Hero } from '../components/Hero'
+import { QuickAccessCards } from '../components/QuickAccessCard'
 
 export function LandingPage() {
   // const store = useGameStore()
