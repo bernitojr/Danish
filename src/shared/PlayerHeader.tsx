@@ -15,8 +15,8 @@ export function PlayerHeader({
 }: PlayerHeaderProps) {
   const initials = username.slice(0, 2).toUpperCase() || '??'
   const rootClass = compact
-    ? 'flex items-center gap-2 px-2 py-1'
-    : 'flex items-center gap-3 px-2 py-1'
+    ? 'flex items-center gap-2 px-4 py-4'
+    : 'flex items-center gap-3 px-4 py-4'
   const avatarSize = compact ? 'w-7 h-7' : 'w-[52px] h-[52px]'
   const initialsClass = compact
     ? 'text-[10px] font-bold text-[hsl(var(--foreground))]'
@@ -34,7 +34,11 @@ export function PlayerHeader({
             className={`${avatarSize} rounded-full flex items-center justify-center border-2 border-white/30 shadow-md overflow-hidden`}
           >
             {avatarUrl ? (
-              <img src={avatarUrl} alt={username} className="w-full h-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span className={initialsClass}>{initials}</span>
             )}
@@ -57,7 +61,11 @@ export function PlayerHeader({
           className={`${avatarSize} shrink-0 rounded-full bg-[hsl(var(--accent)/0.75)] flex items-center justify-center border-2 border-white/30 shadow-md overflow-hidden`}
         >
           {avatarUrl ? (
-            <img src={avatarUrl} alt={username} className="w-full h-full object-cover" />
+            <img
+              src={avatarUrl}
+              alt={username}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <span className={initialsClass}>{initials}</span>
           )}
@@ -68,7 +76,10 @@ export function PlayerHeader({
         {compact ? (
           <p
             className="text-xs font-bold"
-            style={{ fontFamily: 'var(--font-display)', color: 'hsl(var(--foreground))' }}
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'hsl(var(--foreground))',
+            }}
           >
             {username || '—'}
           </p>
@@ -78,7 +89,10 @@ export function PlayerHeader({
           </p>
         )}
         {compact ? (
-          <p className="text-[9px]" style={{ color: 'hsl(var(--foreground-muted))' }}>
+          <p
+            className="text-[9px]"
+            style={{ color: 'hsl(var(--foreground-muted))' }}
+          >
             {activeTitle ?? null}
           </p>
         ) : (
