@@ -7,8 +7,6 @@ import {
   Trophy,
   Newspaper,
 } from 'lucide-react'
-import { useGameStore } from '@/features/game/store/gameStore'
-import type { BotDifficulty } from '@/features/game/utils/types'
 import { useNavigate } from 'react-router-dom'
 
 const STATIC_CARDS = [
@@ -59,39 +57,11 @@ const STATIC_CARDS = [
   },
 ]
 
-const DIFFICULTY_LEVELS: {
-  label: string
-  value: BotDifficulty
-  desc: string
-}[] = [
-  {
-    label: 'Facile',
-    value: 'easy',
-    desc: 'Les bots jouent au hasard, sans aucune stratégie.',
-  },
-  {
-    label: 'Moyen',
-    value: 'medium',
-    desc: 'Les bots appliquent quelques stratégies de base.',
-  },
-  {
-    label: 'Difficile',
-    value: 'hard',
-    desc: 'Les bots jouent avec une stratégie avancée — prépare-toi !',
-  },
-]
 
 export function QuickAccessCards() {
   const navigate = useNavigate()
-  const { setDifficulty } = useGameStore()
-  const [diffIndex, setDiffIndex] = useState(0)
-  const currentDiff = DIFFICULTY_LEVELS[diffIndex]!
-
-  // Pourcentage de remplissage du slider (0%, 50%, 100%)
-  const fillPercent = (diffIndex / (DIFFICULTY_LEVELS.length - 1)) * 100
 
   function handlePlay() {
-    setDifficulty(currentDiff.value)
     navigate('/game')
   }
 
@@ -114,13 +84,7 @@ export function QuickAccessCards() {
           />
 
           {/* Card 2 — Jouer (interactive) */}
-          <CardPlay
-            diffIndex={diffIndex}
-            currentDiff={currentDiff}
-            fillPercent={fillPercent}
-            onDiffChange={setDiffIndex}
-            onPlay={handlePlay}
-          />
+          <CardPlay onPlay={handlePlay} />
 
           {/* Card 3 — Profil */}
           <CardStatic
@@ -177,20 +141,10 @@ function getCardBoxShadow(isHovered: boolean): string {
 // ─────────────────────────────────────────────
 
 interface CardPlayProps {
-  diffIndex: number
-  currentDiff: (typeof DIFFICULTY_LEVELS)[number]
-  fillPercent: number
-  onDiffChange: (i: number) => void
   onPlay: () => void
 }
 
-function CardPlay({
-  diffIndex,
-  currentDiff,
-  fillPercent,
-  onDiffChange,
-  onPlay,
-}: CardPlayProps) {
+function CardPlay({ onPlay }: CardPlayProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -231,69 +185,8 @@ function CardPlay({
           Jouer
         </div>
         <p className="text-sm text-[hsl(var(--foreground-secondary))] leading-relaxed">
-          Lance une nouvelle partie contre des bots. Choisis la difficulté avant
-          de jouer.
+          Lance une nouvelle partie contre des bots. Choisis la difficulté avant de jouer.
         </p>
-
-        {/* Slider de difficulté avec remplissage progressif */}
-        <div className="mt-4 flex flex-col gap-2">
-          <div className="flex justify-between text-[0.7rem] font-medium">
-            {DIFFICULTY_LEVELS.map((d, i) => (
-              <span
-                key={d.value}
-                className="transition-all duration-1000"
-                style={{
-                  color:
-                    i === diffIndex
-                      ? 'hsl(var(--card-accent))'
-                      : 'hsl(var(--foreground-muted))',
-                  fontWeight: i === diffIndex ? 800 : 400,
-                }}
-              >
-                {d.label}
-              </span>
-            ))}
-          </div>
-          {/* Track custom */}
-          <div
-            className="relative h-1.5 rounded-full"
-            style={{ background: 'hsl(var(--border))' }}
-          >
-            {/* Fill animé */}
-            <div
-              className="absolute top-0 left-0 h-full rounded-full"
-              style={{
-                width: `${fillPercent}%`,
-                background: 'hsl(var(--card-accent))',
-                transition: 'width 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
-              }}
-            />
-            {/* Thumb custom */}
-            <div
-              className="absolute top-1/2 w-4 h-4 rounded-full pointer-events-none"
-              style={{
-                left: `${fillPercent}%`,
-                transform: 'translate(-50%, -50%)',
-                background: 'hsl(var(--card-accent))',
-                //   boxShadow: '0 2px 8px hsl(var(--card-accent) / 0.4), 0 0 0 4px hsl(var(--card) )',
-                transition: 'left 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
-              }}
-            />
-            {/* Input invisible pour capter le drag */}
-            <input
-              type="range"
-              min={0}
-              max={2}
-              step={1}
-              value={diffIndex}
-              onChange={(e) => onDiffChange(Number(e.target.value))}
-              className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
-            />
-          </div>
-          <p className="text-xs text-[hsl(var(--foreground-secondary))] leading-relaxed min-h-[2.5em]">
-            {currentDiff.desc}
-          </p>
-        </div>
       </div>
 
       <div className="relative z-10 flex items-center justify-between pt-4 border-t border-[hsl(var(--border))]">
