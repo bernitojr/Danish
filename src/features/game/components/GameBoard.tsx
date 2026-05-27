@@ -7,6 +7,8 @@ import { EndScreen } from './EndScreen'
 import { LogPanel } from './LogPanel'
 import type { Card, GameState, Player } from '@/features/game/utils/types'
 import { useGameResult } from '@/features/profil/hooks/useGameResult'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { usePublicProfile } from '@/features/profil/hooks/usePublicProfile'
 
 const EMOTES = ['😊', '😐', '😍', '😵']
 
@@ -39,6 +41,11 @@ export function GameBoard() {
     isDebugMode,
     setRulesMode,
   } = useGameStore()
+  const { user, profile } = useAuthStore()
+  const { data: publicProfile } = usePublicProfile(user?.id ?? null)
+  const activeTitle = publicProfile
+    ? (publicProfile.allTitles.find((t) => t.id === publicProfile.active_title_id)?.name ?? null)
+    : null
   const [pendingAce, setPendingAce] = useState<Card | null>(null)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [hiddenPending, setHiddenPending] = useState<Card | null>(null)
@@ -606,6 +613,9 @@ export function GameBoard() {
               onCardClick={handleCardClick}
               onSwap={swapCard}
               isDebugMode={isDebugMode}
+              profileUsername={profile?.username}
+              profileAvatarUrl={profile?.avatar_url}
+              profileTitle={activeTitle}
             />
             {pendingAce && (
               <div className="px-4 py-2 bg-black/60 rounded-lg border border-red-400/60 flex items-center gap-3">

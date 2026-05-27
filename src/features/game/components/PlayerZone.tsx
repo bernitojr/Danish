@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Card, Player } from '@/features/game/utils/types';
 import { GameCard } from './GameCard';
+import { PlayerHeader } from '@/shared/PlayerHeader';
 
 type CardStateResult = 'normal' | 'selected' | 'optimal' | 'chosen';
 function cardState(card: Card, validMoves: Card[], bestMove: Card | null, selectedIds: string[]): CardStateResult {
@@ -22,6 +23,9 @@ interface PlayerZoneProps {
   onCardClick: (card: Card) => void;
   onSwap: (handCard: Card, visibleCard: Card) => void;
   isDebugMode?: boolean;
+  profileUsername?: string;
+  profileAvatarUrl?: string | null;
+  profileTitle?: string | null;
 }
 
 function FanRow({ cards, isHidden, validMoves, bestMove, selectedIds, onCardClick }: {
@@ -51,7 +55,7 @@ function FanRow({ cards, isHidden, validMoves, bestMove, selectedIds, onCardClic
   );
 }
 
-export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cannotPlay, validMoves, bestMove, selectedCardIds, onCardClick, onSwap, isDebugMode = false }: PlayerZoneProps) {
+export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cannotPlay, validMoves, bestMove, selectedCardIds, onCardClick, onSwap, isDebugMode = false, profileUsername, profileAvatarUrl, profileTitle }: PlayerZoneProps) {
   const [pendingSwap, setPendingSwap] = useState<{ card: Card; zone: 'hand' | 'visible' } | null>(null);
   const handEmpty = player.hand.length === 0;
   const visibleEmpty = player.visibleCards.length === 0;
@@ -73,27 +77,6 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
       else { setPendingSwap(prev => prev?.card.id === card.id ? null : { card, zone: 'visible' }); }
     } else if (!isPreparing && handEmpty) { onCardClick(card); }
   }
-
-  const banner = (
-    <div className="flex items-center gap-1.5">
-      <div
-        className={`${isHuman ? 'w-8 h-8 text-sm' : 'w-6 h-6 text-xs'} rounded-full flex items-center justify-center font-bold flex-shrink-0`}
-        style={{
-          background: 'hsl(var(--card))',
-          border: '1.5px solid hsl(var(--border))',
-          color: 'hsl(var(--foreground))',
-          fontFamily: 'var(--font-display)',
-        }}
-      >
-        {player.name[0]}
-      </div>
-      <div>
-        <div className={isHuman ? 'text-sm' : 'text-xs'} style={{ color: 'hsl(var(--foreground))', fontFamily: 'var(--font-display)', fontWeight: 600 }}>{player.name}</div>
-        <div className="text-[10px] italic" style={{ color: 'hsl(var(--foreground-muted))' }}>{player.title}</div>
-      </div>
-      {isCurrentPlayer && <span className="text-xs animate-pulse ml-1" style={{ color: 'hsl(var(--accent))' }}>▶</span>}
-    </div>
-  );
 
   const tableCards = (
     <div className="relative flex gap-1">
@@ -126,7 +109,27 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
             {extra > 0 && <span className="text-white/60 text-xs ml-1">+{extra}</span>}
           </div>
         )}
-        {banner}
+        <div className="relative flex flex-col items-center">
+          {isCurrentPlayer && (
+            <div
+              className="mb-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide animate-pulse"
+              style={{
+                background: 'hsl(var(--accent) / 0.15)',
+                border: '1px solid hsl(var(--accent) / 0.6)',
+                color: 'hsl(var(--accent))',
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              ⏳ En jeu
+            </div>
+          )}
+          <PlayerHeader
+            username={player.name}
+            avatarUrl={null}
+            activeTitle={player.title ?? null}
+            compact={true}
+          />
+        </div>
       </div>
     );
   }
@@ -157,7 +160,26 @@ export function PlayerZone({ player, isCurrentPlayer, isHuman, isPreparing, cann
           </p>
         )}
       </div>
-      {banner}
+      <div className="relative flex flex-col items-center">
+        {isCurrentPlayer && (
+          <div
+            className="mb-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide animate-pulse"
+            style={{
+              background: 'hsl(var(--accent) / 0.15)',
+              border: '1px solid hsl(var(--accent) / 0.6)',
+              color: 'hsl(var(--accent))',
+              fontFamily: 'var(--font-display)',
+            }}
+          >
+            ▶ À toi de jouer
+          </div>
+        )}
+        <PlayerHeader
+          username={profileUsername ?? player.name}
+          avatarUrl={profileAvatarUrl ?? null}
+          activeTitle={profileTitle ?? player.title ?? null}
+        />
+      </div>
     </div>
   );
 }

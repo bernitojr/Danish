@@ -3,6 +3,7 @@ interface PlayerHeaderProps {
   avatarUrl: string | null
   activeTitle: string | null
   onAvatarClick?: () => void
+  compact?: boolean
 }
 
 export function PlayerHeader({
@@ -10,28 +11,32 @@ export function PlayerHeader({
   avatarUrl,
   activeTitle,
   onAvatarClick,
+  compact = false,
 }: PlayerHeaderProps) {
   const initials = username.slice(0, 2).toUpperCase() || '??'
+  const rootClass = compact
+    ? 'flex items-center gap-2 px-2 py-1'
+    : 'flex items-center gap-3 px-2 py-1'
+  const avatarSize = compact ? 'w-7 h-7' : 'w-[52px] h-[52px]'
+  const initialsClass = compact
+    ? 'text-[10px] font-bold text-[hsl(var(--foreground))]'
+    : 'font-display font-extrabold text-lg text-[hsl(var(--foreground))]'
 
   return (
-    <div className="h-[88px] bg-[linear-gradient(135deg,hsl(var(--primary)/0.55),hsl(var(--accent)/0.35))] flex items-center gap-3 px-4">
+    <div className={rootClass}>
       {onAvatarClick ? (
         <button
           onClick={onAvatarClick}
           className="relative shrink-0 group"
           aria-label="Changer la photo de profil"
         >
-          <div className="w-[52px] h-[52px] rounded-full  flex items-center justify-center border-2 border-white/30 shadow-md overflow-hidden">
+          <div
+            className={`${avatarSize} rounded-full flex items-center justify-center border-2 border-white/30 shadow-md overflow-hidden`}
+          >
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={username}
-                className="w-full h-full object-cover"
-              />
+              <img src={avatarUrl} alt={username} className="w-full h-full object-cover" />
             ) : (
-              <span className="font-display font-extrabold text-lg text-[hsl(var(--foreground))]">
-                {initials}
-              </span>
+              <span className={initialsClass}>{initials}</span>
             )}
             <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <svg
@@ -48,28 +53,39 @@ export function PlayerHeader({
           </div>
         </button>
       ) : (
-        <div className="w-[52px] h-[52px] shrink-0 rounded-full bg-[hsl(var(--accent)/0.75)] flex items-center justify-center border-2 border-white/30 shadow-md overflow-hidden">
+        <div
+          className={`${avatarSize} shrink-0 rounded-full bg-[hsl(var(--accent)/0.75)] flex items-center justify-center border-2 border-white/30 shadow-md overflow-hidden`}
+        >
           {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={username}
-              className="w-full h-full object-cover"
-            />
+            <img src={avatarUrl} alt={username} className="w-full h-full object-cover" />
           ) : (
-            <span className="font-display font-extrabold text-lg text-[hsl(var(--foreground))]">
-              {initials}
-            </span>
+            <span className={initialsClass}>{initials}</span>
           )}
         </div>
       )}
 
       <div className="min-w-0">
-        <p className="text-xl font-display font-bold text-[hsl(var(--foreground))]">
-          {username || '—'}
-        </p>
-        <p className="text-xs text-[hsl(var(--foreground))]/75 truncate drop-shadow-sm">
-          {activeTitle ?? null}
-        </p>
+        {compact ? (
+          <p
+            className="text-xs font-bold"
+            style={{ fontFamily: 'var(--font-display)', color: 'hsl(var(--foreground))' }}
+          >
+            {username || '—'}
+          </p>
+        ) : (
+          <p className="text-xl font-display font-bold text-[hsl(var(--foreground))]">
+            {username || '—'}
+          </p>
+        )}
+        {compact ? (
+          <p className="text-[9px]" style={{ color: 'hsl(var(--foreground-muted))' }}>
+            {activeTitle ?? null}
+          </p>
+        ) : (
+          <p className="text-xs text-[hsl(var(--foreground))]/75 truncate drop-shadow-sm">
+            {activeTitle ?? null}
+          </p>
+        )}
       </div>
     </div>
   )
