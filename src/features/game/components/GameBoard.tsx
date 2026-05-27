@@ -340,25 +340,43 @@ export function GameBoard() {
     }
   }
 
-  function Bubble({ id }: { id: string }) {
+  function Bubble({
+    id,
+    direction = 'up',
+  }: {
+    id: string
+    direction?: 'up' | 'down' | 'left' | 'right'
+  }) {
     const content = bubbles[id]
     if (!content) return null
-    // Single emoji (1 code point incl. surrogate pairs) gets a larger font;
-    // text messages shrink and wrap on embedded \n via whitespace-pre-line.
     const isEmoji = [...content].length <= 2
+    const posClass = {
+      up: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
+      down: 'top-1/2 left-1/2 -translate-x-1/2 mt-2',
+      left: 'right-full top-1/2 -translate-y-1/2 mr-2',
+      right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+    }[direction]
     return (
       <div
-        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black/70 rounded-xl px-3 py-1.5 z-20 text-white text-center whitespace-pre-line font-medium leading-snug shadow-lg max-w-[220px] ${isEmoji ? 'text-2xl' : 'text-xs'}`}
+        className={`absolute ${posClass} bg-black/70 rounded-xl px-3 py-1.5 z-20 text-white text-center whitespace-pre-line font-medium leading-snug shadow-lg max-w-[220px] ${isEmoji ? 'text-2xl' : 'text-xs'}`}
       >
         {content}
       </div>
     )
   }
 
-  function BotZone({ player, idx }: { player: Player; idx: number }) {
+  function BotZone({
+    player,
+    idx,
+    bubbleDirection = 'up',
+  }: {
+    player: Player
+    idx: number
+    bubbleDirection?: 'up' | 'down' | 'left' | 'right'
+  }) {
     return (
       <div className="relative flex justify-center">
-        <Bubble id={player.id} />
+        <Bubble id={player.id} direction={bubbleDirection} />
         <PlayerZone
           player={player}
           isCurrentPlayer={currentPlayerIndex === idx}
@@ -417,7 +435,12 @@ export function GameBoard() {
         {stateHistory.length > 0 && phase === 'PLAYING' && (
           <button
             onClick={undoLastMove}
-            className="absolute top-2 right-2 px-3 py-1 bg-black/40 hover:bg-black/60 text-white/70 text-xs rounded border border-white/20 z-30"
+            className="absolute top-2 right-2 z-30 inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors"
+            style={{
+              background: 'transparent',
+              color: 'hsl(var(--foreground-muted))',
+              border: '1px solid hsl(var(--border))',
+            }}
           >
             ↩ Retour
           </button>
@@ -531,7 +554,7 @@ export function GameBoard() {
 
             {/* R1 C2 — Bot top (bot2) */}
             <div className="flex items-end justify-center pb-2">
-              <BotZone player={bot2} idx={2} />
+              <BotZone player={bot2} idx={2} bubbleDirection="down" />
             </div>
 
             {/* R1 C3 — empty */}
@@ -539,7 +562,7 @@ export function GameBoard() {
 
             {/* R2 C1 — Bot left (bot1) */}
             <div className="flex items-center justify-end pr-2">
-              <BotZone player={bot1} idx={1} />
+              <BotZone player={bot1} idx={1} bubbleDirection="right" />
             </div>
 
             {/* R2 C2 — empty */}
@@ -547,7 +570,7 @@ export function GameBoard() {
 
             {/* R2 C3 — Bot right (bot3) */}
             <div className="flex items-center justify-start pl-2">
-              <BotZone player={bot3} idx={3} />
+              <BotZone player={bot3} idx={3} bubbleDirection="left" />
             </div>
 
             {/* R3 C1 — empty */}
@@ -574,31 +597,46 @@ export function GameBoard() {
               <div className="flex items-center gap-6">
                 {/* Fosse */}
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-xs" style={{ color: 'hsl(var(--primary))' }}>
+                  <span
+                    className="text-xs"
+                    style={{ color: 'hsl(var(--primary))' }}
+                  >
                     Fosse ({gameState.discard.length})
                   </span>
                   <div className="relative w-14 h-[78px]">
                     {gameState.discard.length === 0 && (
                       <div
                         className="absolute inset-0 rounded-md flex items-center justify-center text-xs"
-                        style={{ border: '1.5px solid hsl(var(--primary) / 0.5)', color: 'hsl(var(--primary) / 0.4)' }}
+                        style={{
+                          border: '1.5px solid hsl(var(--primary) / 0.5)',
+                          color: 'hsl(var(--primary) / 0.4)',
+                        }}
                       >
                         vide
                       </div>
                     )}
                     {gameState.discard.length >= 3 && (
                       <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
-                        <GameCard card={gameState.discard[gameState.discard.length - 3]} state="normal" />
+                        <GameCard
+                          card={gameState.discard[gameState.discard.length - 3]}
+                          state="normal"
+                        />
                       </div>
                     )}
                     {gameState.discard.length >= 2 && (
                       <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
-                        <GameCard card={gameState.discard[gameState.discard.length - 2]} state="normal" />
+                        <GameCard
+                          card={gameState.discard[gameState.discard.length - 2]}
+                          state="normal"
+                        />
                       </div>
                     )}
                     {gameState.discard.length >= 1 && (
                       <div className="absolute inset-0">
-                        <GameCard card={gameState.discard[gameState.discard.length - 1]} state="normal" />
+                        <GameCard
+                          card={gameState.discard[gameState.discard.length - 1]}
+                          state="normal"
+                        />
                       </div>
                     )}
                   </div>
@@ -662,18 +700,28 @@ export function GameBoard() {
               </div>
               {cannotPlay && pile.length > 0 && (
                 <button
-                  className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-sm ring-2 ring-red-400 animate-pulse"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse"
+                  style={{
+                    background: 'hsl(var(--delete))',
+                    color: 'hsl(var(--primary-foreground))',
+                    boxShadow: 'hsl(var(--delete) / 0.25) 0 4px 14px',
+                  }}
                   onClick={takePile}
                 >
-                  Ramasser la pile 📥
+                  Ramasser la pile
                 </button>
               )}
               {canPassTurn && (
                 <button
-                  className="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded text-sm ring-2 ring-yellow-400 animate-pulse"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse"
+                  style={{
+                    background: 'hsl(var(--warning))',
+                    color: 'hsl(var(--foreground-contrast))',
+                    boxShadow: 'hsl(var(--warning) / 0.25) 0 4px 14px',
+                  }}
                   onClick={passTurn}
                 >
-                  Passer son tour ⏭
+                  ⏭ Passer son tour
                 </button>
               )}
               {invalidMsg && (
@@ -690,7 +738,7 @@ export function GameBoard() {
           className="absolute left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
           style={{ bottom: 8 }}
         >
-          <Bubble id="human" />
+          <Bubble id="human" direction="up" />
           <PlayerZone
             player={human}
             isCurrentPlayer={currentPlayerIndex === 0}
