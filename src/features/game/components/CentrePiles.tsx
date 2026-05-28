@@ -13,7 +13,6 @@ export function CentrePiles() {
     handlePileClick,
     handleTakePile,
     revealingHidden,
-    cutReveal,
     cannotPlay,
     canPassTurn,
     invalidMsg,
@@ -67,7 +66,7 @@ export function CentrePiles() {
             className={`relative w-14 h-[78px] cursor-pointer rounded-md ${pileRing}`}
             onClick={handlePileClick}
           >
-            {pile.length === 0 && !revealingHidden && !cutReveal && (
+            {pile.length === 0 && !revealingHidden && (
               <GameCard card={null} state="empty" />
             )}
             <AnimatePresence>
@@ -93,11 +92,6 @@ export function CentrePiles() {
             {revealingHidden && (
               <div className="absolute inset-0 ring-2 ring-yellow-400 rounded-md animate-pulse">
                 <GameCard card={revealingHidden} state="normal" />
-              </div>
-            )}
-            {cutReveal && (
-              <div className="absolute inset-0 ring-2 ring-orange-400 rounded-md animate-pulse">
-                <GameCard card={cutReveal} state="normal" />
               </div>
             )}
           </div>

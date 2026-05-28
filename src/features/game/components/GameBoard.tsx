@@ -13,7 +13,7 @@ import { GameBoardProvider } from '@/features/game/contexts/GameBoardContext'
 import { useBubbles } from '@/features/game/contexts/BubbleContext'
 import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 
-const BOT_DELAY_MS = { easy: 1200, medium: 2000, hard: 2500 } as const
+const BOT_DELAY_MS = { easy: 2500, medium: 3000, hard: 4000 } as const
 
 // Suit name lookup for contextual emotes (e.g. "Comme ça t'as pas de cœur ?").
 const SUIT_NAME: Record<Card['suit'], string> = {
@@ -39,19 +39,23 @@ export function GameBoard() {
     difficulty,
   } = useGameStore()
   const { setBubbles } = useBubbles()
-  const { flyCardToPile, flyPileToHand, flyPileToDiscard, flyAttack } = useCardAnimation()
+  const {
+    flyCardToPile,
+    flyPileToHand,
+    flyPileToDiscard,
+    flyAttack,
+    flyCardFromPlayerToPile,
+  } = useCardAnimation()
 
   // ── Local state ──────────────────────────────────────────────────────────
   const [pendingAce, setPendingAce] = useState<Card | null>(null)
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
   const [hiddenPending, setHiddenPending] = useState<Card | null>(null)
   const [revealingHidden, setRevealingHidden] = useState<Card | null>(null)
-  const [cutReveal, setCutReveal] = useState<Card | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
   const [showEnd, setShowEnd] = useState(true)
   const prevGsRef = useRef<GameState | null>(null)
-  const cutTimerRef = useRef<number | null>(null)
   useGameResult(gameState)
   // Remembers the most recently played card + its player across state
   // transitions so "next player takes pile" consequence emotes can attribute
@@ -82,9 +86,7 @@ export function GameBoard() {
 
     // Sweep animation: pile was cleared into the discard (10-cut or 4-of-a-kind)
     const anyCut =
-      discardGrew &&
-      prev.pile.length > 0 &&
-      gameState.pile.length === 0
+      discardGrew && prev.pile.length > 0 && gameState.pile.length === 0
     if (anyCut) {
       flyPileToDiscard(prev.pile.map((c) => c.id))
     }
@@ -93,29 +95,11 @@ export function GameBoard() {
     if (pileCleared && !anyCut) {
       const taker = prev.players[prev.currentPlayerIndex]
       if (taker && taker.id !== 'human') {
-        flyPileToHand(prev.pile.map((c) => c.id), taker.id)
+        flyPileToHand(
+          prev.pile.map((c) => c.id),
+          taker.id
+        )
       }
-    }
-
-    // Bot 10 cut visual: stage a 700ms overlay so the 10 stays visible on
-    // top of the pile before the display clears. Human 10 plays are
-    // intercepted in handlePileClick and don't reach this effect.
-    const lastDiscardCard = discardGrew
-      ? (gameState.discard.at(-1) ?? null)
-      : null
-    const botCut =
-      prev.currentPlayerIndex !== 0 &&
-      discardGrew &&
-      prev.pile.length > 0 &&
-      gameState.pile.length === 0 &&
-      lastDiscardCard?.rank === '10'
-    if (botCut && lastDiscardCard) {
-      if (cutTimerRef.current !== null) window.clearTimeout(cutTimerRef.current)
-      setCutReveal(lastDiscardCard)
-      cutTimerRef.current = window.setTimeout(() => {
-        setCutReveal(null)
-        cutTimerRef.current = null
-      }, 700)
     }
 
     // ── Contextual emote triggers ──────────────────────────────────────────
@@ -211,7 +195,23 @@ export function GameBoard() {
     }
 
     if (emote) sendEmote(emote.playerId, emote.message)
-  }, [gameState, sendEmote, flyPileToDiscard, flyAttack])
+
+    // Bot plays a card — fly from bot zone to pile
+    if (pileGrew && prev.currentPlayerIndex !== 0) {
+      const botIdx = prev.currentPlayerIndex
+      const bot = prev.players[botIdx]
+      const playedCard = gameState.pile.at(-1)
+      if (bot && playedCard) {
+        flyCardFromPlayerToPile(bot.id)
+      }
+    }
+  }, [
+    gameState,
+    sendEmote,
+    flyPileToDiscard,
+    flyAttack,
+    flyCardFromPlayerToPile,
+  ])
 
   useEffect(() => {
     if (!gameState || gameState.phase !== 'PLAYING' || isPlayerTurn) return
@@ -254,7 +254,10 @@ export function GameBoard() {
   // ── Derived values (before early return — gameState may be null) ─────────
   const human = gameState?.players[0]
   const pile = useMemo(() => gameState?.pile ?? [], [gameState?.pile])
-  const validMoves = useMemo(() => gameState?.validMoves ?? [], [gameState?.validMoves])
+  const validMoves = useMemo(
+    () => gameState?.validMoves ?? [],
+    [gameState?.validMoves]
+  )
   const turnContext = gameState?.turnContext ?? null
   const isPreparing = gameState?.phase === 'PREPARATION'
   const inHiddenMode =
@@ -276,29 +279,35 @@ export function GameBoard() {
       : ''
 
   // ── Handlers (before early return) ──────────────────────────────────────
-  const handleCardClick = useCallback((card: Card) => {
-    if (isPreparing || !isPlayerTurn || pendingAce) return
-    if (inHiddenMode) {
-      setHiddenPending(card)
-      return
-    }
-    setSelectedCards((prev) =>
-      prev.some((c) => c.id === card.id)
-        ? prev.filter((c) => c.id !== card.id)
-        : prev.length > 0 && prev[0].rank !== card.rank
-          ? [card]
-          : [...prev, card]
-    )
-  }, [isPreparing, isPlayerTurn, pendingAce, inHiddenMode])
+  const handleCardClick = useCallback(
+    (card: Card) => {
+      if (isPreparing || !isPlayerTurn || pendingAce) return
+      if (inHiddenMode) {
+        setHiddenPending(card)
+        return
+      }
+      setSelectedCards((prev) =>
+        prev.some((c) => c.id === card.id)
+          ? prev.filter((c) => c.id !== card.id)
+          : prev.length > 0 && prev[0].rank !== card.rank
+            ? [card]
+            : [...prev, card]
+      )
+    },
+    [isPreparing, isPlayerTurn, pendingAce, inHiddenMode]
+  )
 
   const handleTakePile = useCallback(() => {
     if (pile.length === 0) return
-    flyPileToHand(pile.map((c) => c.id), 'human')
+    flyPileToHand(
+      pile.map((c) => c.id),
+      'human'
+    )
     takePile()
   }, [flyPileToHand, pile, takePile])
 
   const handlePileClick = useCallback(() => {
-    if (revealingHidden || cutReveal) return
+    if (revealingHidden) return
     if (inHiddenMode) {
       if (!hiddenPending) return
       const card = hiddenPending
@@ -327,15 +336,10 @@ export function GameBoard() {
       setPendingAce(selectedCards[0])
       return
     }
-    // Bug 1: stage 700ms pause so the 10 is visible on top of the pile before
-    // applyPlay cuts it into the discard. Same pattern as the Ace hidden-reveal fix.
     if (selectedCards[0].rank === '10') {
       const tens = selectedCards
-      if (cutTimerRef.current !== null) window.clearTimeout(cutTimerRef.current)
-      setCutReveal(tens[tens.length - 1])
-      cutTimerRef.current = window.setTimeout(() => {
-        setCutReveal(null)
-        cutTimerRef.current = null
+      // Fly the 10 to the pile first, then immediately play (no pause)
+      flyCardToPile([tens[tens.length - 1]], () => {
         if (!playCards(tens)) {
           const effectiveCard = turnContext?.lastEffectiveCard ?? pile.at(-1)
           setInvalidMsg(
@@ -346,7 +350,7 @@ export function GameBoard() {
           addLog(`Tu joues ${tens[0].rank}`)
           setSelectedCards([])
         }
-      }, 700)
+      })
       return
     }
     if (!playCards(selectedCards)) {
@@ -361,9 +365,16 @@ export function GameBoard() {
       setSelectedCards([])
     }
   }, [
-    revealingHidden, cutReveal, inHiddenMode, hiddenPending,
-    selectedCards, pendingAce, turnContext, pile, playCards,
-    addLog, cutTimerRef, flyCardToPile,
+    revealingHidden,
+    inHiddenMode,
+    hiddenPending,
+    selectedCards,
+    pendingAce,
+    turnContext,
+    pile,
+    playCards,
+    addLog,
+    flyCardToPile,
   ])
 
   // ── Context value (useMemo before early return) ──────────────────────────
@@ -376,7 +387,6 @@ export function GameBoard() {
       hiddenPending,
       setHiddenPending,
       revealingHidden,
-      cutReveal,
       invalidMsg,
       gameStarted,
       handleCardClick,
@@ -395,7 +405,6 @@ export function GameBoard() {
       pendingAce,
       hiddenPending,
       revealingHidden,
-      cutReveal,
       invalidMsg,
       gameStarted,
       handleCardClick,
@@ -411,7 +420,7 @@ export function GameBoard() {
       setSelectedCards,
       setPendingAce,
       setHiddenPending,
-    ],
+    ]
   )
 
   // ── Early return ─────────────────────────────────────────────────────────

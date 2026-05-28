@@ -20,6 +20,7 @@ interface CardAnimationContextValue {
   flyPileToHand: (cardIds: string[], targetPlayerId?: string, onComplete?: () => void) => void
   flyPileToDiscard: (cardIds: string[], onComplete?: () => void) => void
   flyAttack: (attackerId: string, targetId: string, onComplete?: () => void) => void
+  flyCardFromPlayerToPile: (playerId: string, onComplete?: () => void) => void
   flyingCards: FlyingCard[]
 }
 
@@ -164,6 +165,33 @@ export function CardAnimationProvider({ children }: { children: React.ReactNode 
     }, totalDuration)
   }, [])
 
+  const flyCardFromPlayerToPile = useCallback((
+    playerId: string,
+    onComplete?: () => void
+  ) => {
+    const playerEl = playerRefs.current.get(playerId)
+    const pileEl = pileRef.current
+    if (!playerEl || !pileEl) { onComplete?.(); return }
+
+    const fromRect = playerEl.getBoundingClientRect()
+    const toRect = pileEl.getBoundingClientRect()
+
+    const flyId = `fly-bot-${Date.now()}`
+    setFlyingCards(prev => [...prev, {
+      id: flyId,
+      cardId: 'bot-card',
+      fromRect,
+      toRect,
+      delay: 0,
+      type: 'card',
+    }])
+
+    setTimeout(() => {
+      setFlyingCards(prev => prev.filter(f => f.id !== flyId))
+      onComplete?.()
+    }, 400)
+  }, [])
+
   const flyAttack = useCallback(
     (attackerId: string, targetId: string, onComplete?: () => void) => {
       const attackerEl = playerRefs.current.get(attackerId)
@@ -201,6 +229,7 @@ export function CardAnimationProvider({ children }: { children: React.ReactNode 
         flyPileToHand,
         flyPileToDiscard,
         flyAttack,
+        flyCardFromPlayerToPile,
         flyingCards,
       }}
     >
