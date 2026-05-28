@@ -88,7 +88,19 @@ export function GameBoard() {
     const anyCut =
       discardGrew && prev.pile.length > 0 && gameState.pile.length === 0
     if (anyCut) {
-      flyPileToDiscard(prev.pile.map((c) => c.id))
+      const sweptIds = prev.pile.map((c) => c.id)
+      const lastDiscardCard = gameState.discard.at(-1)
+      const isBotTen =
+        prev.currentPlayerIndex !== 0 &&
+        lastDiscardCard?.rank === '10'
+
+      if (isBotTen) {
+        const bot = prev.players[prev.currentPlayerIndex]
+        if (bot) flyCardFromPlayerToPile(bot.id)
+      }
+
+      // Sweep after card lands (700ms if bot ten, 300ms otherwise)
+      setTimeout(() => flyPileToDiscard(sweptIds), isBotTen ? 700 : 300)
     }
 
     // Pile taken by a bot (human is handled synchronously in handleTakePile)
