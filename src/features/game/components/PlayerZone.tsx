@@ -156,43 +156,62 @@ export function PlayerZone({
     }
   }
 
+  const { registerCardRef } = useCardAnimation()
+
   const tableCards = (
     <div className="relative flex gap-1">
-      {player.hiddenCards.map((c, i) => (
-        <div key={c.id} className="relative">
-          <GameCard
-            card={isDebugMode ? c : null}
-            state={
-              isDebugMode ? 'normal' : hiddenActive ? 'selected' : 'hidden'
-            }
-            onClick={hiddenActive ? () => onCardClick(c) : undefined}
-          />
-          {sortedVisible[i] && (
-            <div className="absolute -top-2 left-0">
+      <AnimatePresence>
+        {player.hiddenCards.map((c, i) => (
+          <div key={c.id} className="relative">
+            <motion.div
+              ref={(el) => registerCardRef(c.id, el)}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            >
               <GameCard
-                card={sortedVisible[i]}
+                card={isDebugMode ? c : null}
                 state={
-                  isPreparing
-                    ? pendingSwap?.zone === 'hand'
-                      ? 'selected'
-                      : pendingSwap?.card.id === sortedVisible[i]?.id
-                        ? 'chosen'
-                        : 'normal'
-                    : !isPreparing && handEmpty
-                      ? cardState(
-                          sortedVisible[i],
-                          validMoves,
-                          bestMove,
-                          selectedCardIds
-                        )
-                      : 'normal'
+                  isDebugMode ? 'normal' : hiddenActive ? 'selected' : 'hidden'
                 }
-                onClick={() => handleVisibleClick(sortedVisible[i])}
+                onClick={hiddenActive ? () => onCardClick(c) : undefined}
               />
-            </div>
-          )}
-        </div>
-      ))}
+            </motion.div>
+            {sortedVisible[i] && (
+              <motion.div
+                ref={(el) => registerCardRef(sortedVisible[i].id, el)}
+                className="absolute -top-2 left-0"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              >
+                <GameCard
+                  card={sortedVisible[i]}
+                  state={
+                    isPreparing
+                      ? pendingSwap?.zone === 'hand'
+                        ? 'selected'
+                        : pendingSwap?.card.id === sortedVisible[i]?.id
+                          ? 'chosen'
+                          : 'normal'
+                      : !isPreparing && handEmpty
+                        ? cardState(
+                            sortedVisible[i],
+                            validMoves,
+                            bestMove,
+                            selectedCardIds
+                          )
+                        : 'normal'
+                  }
+                  onClick={() => handleVisibleClick(sortedVisible[i])}
+                />
+              </motion.div>
+            )}
+          </div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 

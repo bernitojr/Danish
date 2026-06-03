@@ -81,7 +81,11 @@ export function CentrePiles() {
                   <motion.div
                     key={card.id}
                     className="absolute inset-0"
-                    animate={{ rotate: offset.rotate, x: offset.x, opacity: offset.opacity }}
+                    animate={{
+                      rotate: offset.rotate,
+                      x: offset.x,
+                      opacity: offset.opacity,
+                    }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   >
                     <GameCard card={card} state="normal" />
@@ -130,7 +134,7 @@ export function CentrePiles() {
           }}
           onClick={passTurn}
         >
-          ⏭ Passer son tour
+          Passer son tour
         </button>
       )}
       {invalidMsg && (

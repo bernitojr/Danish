@@ -331,7 +331,7 @@ export function GameBoard() {
           setSelectedCards([card])
           setPendingAce(card)
         } else {
-          playCards([card])
+          flyCardToPile([card], () => playCards([card]))
         }
       }, 700)
       return

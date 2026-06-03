@@ -38,7 +38,7 @@ export function CardAnimationProvider({ children }: { children: React.ReactNode 
 
   const registerCardRef = useCallback((cardId: string, el: HTMLElement | null) => {
     if (el) cardRefs.current.set(cardId, el)
-    else cardRefs.current.delete(cardId)
+    // Don't delete on null — keep the last known position for animation
   }, [])
 
   const registerPileRef = useCallback((el: HTMLElement | null) => {
@@ -55,6 +55,10 @@ export function CardAnimationProvider({ children }: { children: React.ReactNode 
   }, [])
 
   const flyCardToPile = useCallback((cards: Card[], onComplete?: () => void) => {
+    console.log('[flyCardToPile]', {
+      lookingFor: cards.map(c => c.id),
+      registered: Array.from(cardRefs.current.keys()),
+    })
     const pileEl = pileRef.current
     if (!pileEl || cards.length === 0) {
       onComplete?.()
@@ -65,6 +69,11 @@ export function CardAnimationProvider({ children }: { children: React.ReactNode 
 
     cards.forEach((card, i) => {
       const el = cardRefs.current.get(card.id)
+      console.log('[flyCardToPile] card ref lookup', {
+        cardId: card.id,
+        elFound: !!el,
+        rect: el?.getBoundingClientRect(),
+      })
       if (!el) return
       const fromRect = el.getBoundingClientRect()
       const id = `fly-to-pile-${card.id}-${Date.now()}-${i}`
