@@ -9,7 +9,6 @@ interface GameBoardContextValue {
   hiddenPending: Card | null
   setHiddenPending: React.Dispatch<React.SetStateAction<Card | null>>
   revealingHidden: Card | null
-  cutReveal: Card | null
   invalidMsg: string | null
   gameStarted: boolean
   handleCardClick: (card: Card) => void
@@ -20,6 +19,8 @@ interface GameBoardContextValue {
   validMoves: Card[]
   bestMove: Card | null
   isPreparing: boolean
+  handleTakePile: () => void
+  attackTarget: string | null
 }
 
 const GameBoardContext = createContext<GameBoardContextValue | null>(null)
