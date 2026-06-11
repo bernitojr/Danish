@@ -17,7 +17,7 @@ export function Hero() {
             {/* Badge avec point pulsant */}
             <div className="inline-flex items-center gap-2 self-start px-3 py-1.5 mb-8 rounded-full border border-[hsl(var(--border))] text-xs text-[hsl(var(--foreground-secondary))]">
               <span className="w-2 h-2 rounded-full bg-[hsl(var(--accent))] animate-pulse" />
-              Tournoi incoming · Édition 2026
+              Prochain tournoi : 20 septembre 2026
             </div>
 
             {/* Titre */}
@@ -34,9 +34,7 @@ export function Hero() {
 
             {/* Subtitle */}
             <p className="text-base text-[hsl(var(--foreground-secondary))] leading-relaxed mb-8 max-w-md">
-              La plateforme officielle du tournoi de cartes annuel. Jeux,
-              règles, classements — tout ce qu'il faut pour la prochaine
-              édition.
+              La plateforme officielle du Danish. Commencez votre aventure ici.
             </p>
 
             {/* Actions */}
@@ -58,7 +56,7 @@ export function Hero() {
                 Jouer maintenant
               </a>
               <a
-                href="#"
+                href="/Danish/leaderboard"
                 className="
                   inline-flex items-center gap-2
                   bg-transparent text-[hsl(var(--foreground-secondary))]
@@ -70,7 +68,7 @@ export function Hero() {
                   no-underline
                 "
               >
-                Voir les règles
+                Voir le classement
                 <ArrowRight size={14} />
               </a>
             </div>
