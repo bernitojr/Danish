@@ -58,7 +58,30 @@ export function AuthPage() {
   }
 
   return (
-    <div className="font-sans bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased flex flex-col items-center justify-center min-h-screen">
+    <div className="relative font-sans bg-[hsl(var(--background))] text-[hsl(var(--foreground))] antialiased flex flex-col items-center justify-center min-h-screen">
+      <a
+        href="/Danish/"
+        className="absolute top-4 left-4 z-20 no-underline flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:opacity-90"
+        style={{
+          background: 'hsl(var(--primary) / 0.14)',
+          border: '1px solid hsl(var(--primary) / 0.45)',
+          color: 'hsl(var(--primary))',
+        }}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        Retour au site
+      </a>
       <div
         className="relative z-10 w-full max-w-[400px] bg-[hsl(var(--card))] rounded-[calc(var(--radius)*2)] p-10 pt-12 pb-8 flex flex-col gap-[1.6rem] transition-[box-shadow] duration-500 card-container"
         data-mode={mode}
