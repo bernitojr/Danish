@@ -329,9 +329,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       hand: newHand,
       visibleCards: newVisible,
     }
-    const newPlayers = gs.players.map((p, i) =>
-      i === botIdx ? updatedBot : p
-    )
+    const newPlayers = gs.players.map((p, i) => (i === botIdx ? updatedBot : p))
     const next: GameState = { ...gs, players: newPlayers }
     set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) })
   },
@@ -522,8 +520,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 2. 3 mirroring an Ace (lastEffectiveCard is Ace)
     const isAcePlay = botCards[0].rank === 'A'
     const isThreeMirroringAce =
-      botCards[0].rank === '3' &&
-      gs.turnContext.lastEffectiveCard?.rank === 'A'
+      botCards[0].rank === '3' && gs.turnContext.lastEffectiveCard?.rank === 'A'
 
     if (isAcePlay || isThreeMirroringAce) {
       const others = gs.players.filter(
