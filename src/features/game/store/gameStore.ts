@@ -155,6 +155,7 @@ export interface GameStore {
   startGame: (playerName: string, difficulty: BotDifficulty) => void
   playCards: (cards: Card[], targetId?: string | null) => boolean
   swapCard: (handCard: Card, visibleCard: Card) => void
+  swapBotCard: (botId: string, handCard: Card, visibleCard: Card) => void
   setReady: () => void
   triggerBotTurn: () => void
   takePile: () => void
@@ -292,6 +293,44 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const newPlayers = gs.players.map((p, i) =>
       i === humanIdx ? updatedHuman : p
+    )
+    const next: GameState = { ...gs, players: newPlayers }
+    set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) })
+  },
+
+  /**
+   * Swaps a card between a bot's hand and its visible zone during PREPARATION.
+   *
+   * Mirrors {@link swapCard} but targets the bot identified by `botId`. Both
+   * cards must already belong to that bot. Does nothing if the phase is wrong,
+   * the player is not a bot, or either card cannot be found.
+   */
+  swapBotCard: (botId, handCard, visibleCard) => {
+    const gs = get().gameState
+    if (!gs || gs.phase !== 'PREPARATION') return
+
+    const botIdx = gs.players.findIndex((p) => p.id === botId)
+    if (botIdx === -1) return
+    const bot = gs.players[botIdx]
+    if (!bot.isBot) return
+
+    if (!bot.hand.some((c) => c.id === handCard.id)) return
+    if (!bot.visibleCards.some((c) => c.id === visibleCard.id)) return
+
+    const newHand = bot.hand.map((c) =>
+      c.id === handCard.id ? visibleCard : c
+    )
+    const newVisible = bot.visibleCards.map((c) =>
+      c.id === visibleCard.id ? handCard : c
+    )
+
+    const updatedBot: Player = {
+      ...bot,
+      hand: newHand,
+      visibleCards: newVisible,
+    }
+    const newPlayers = gs.players.map((p, i) =>
+      i === botIdx ? updatedBot : p
     )
     const next: GameState = { ...gs, players: newPlayers }
     set({ gameState: next, isPlayerTurn: deriveIsPlayerTurn(next) })

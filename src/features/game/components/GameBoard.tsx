@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/features/game/store/gameStore'
 import { useGameLog } from '@/features/game/hooks/useGameLog'
+import { useBotPreparation } from '@/features/game/hooks/useBotPreparation'
 import { EndScreen } from './EndScreen'
 import { BotZone } from './BotZone'
 import { CentrePiles } from './CentrePiles'
@@ -62,6 +63,7 @@ export function GameBoard() {
   // the taunt to the correct sender.
   const lastPlayRef = useRef<{ playerId: string; card: Card } | null>(null)
   const { push: addLog } = useGameLog(gameState, isPlayerTurn)
+  useBotPreparation()
 
   // ── Effects ──────────────────────────────────────────────────────────────
   useEffect(() => {
