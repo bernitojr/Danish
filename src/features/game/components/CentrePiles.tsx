@@ -6,17 +6,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 
 export function CentrePiles() {
   const gameState = useGameStore((s) => s.gameState)
-  const passTurn = useGameStore((s) => s.passTurn)
   const { registerPileRef, registerFosseRef } = useCardAnimation()
-  const {
-    pileRing,
-    handlePileClick,
-    handleTakePile,
-    revealingHidden,
-    cannotPlay,
-    canPassTurn,
-    invalidMsg,
-  } = useGameBoardContext()
+  const { pileRing, handlePileClick, revealingHidden } = useGameBoardContext()
 
   if (!gameState) return null
   const { pile, deck, discard } = gameState
@@ -111,37 +102,6 @@ export function CentrePiles() {
           )}
         </div>
       </div>
-      {cannotPlay && pile.length > 0 && (
-        <button
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse z-40"
-          style={{
-            background: 'hsl(var(--delete))',
-            color: 'hsl(var(--primary-foreground))',
-            boxShadow: 'hsl(var(--delete) / 0.25) 0 4px 14px',
-          }}
-          onClick={handleTakePile}
-        >
-          Ramasser la pile
-        </button>
-      )}
-      {canPassTurn && (
-        <button
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse"
-          style={{
-            background: 'hsl(var(--warning))',
-            color: 'hsl(var(--foreground-contrast))',
-            boxShadow: 'hsl(var(--warning) / 0.25) 0 4px 14px',
-          }}
-          onClick={passTurn}
-        >
-          Passer son tour
-        </button>
-      )}
-      {invalidMsg && (
-        <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full">
-          {invalidMsg}
-        </div>
-      )}
     </div>
   )
 }

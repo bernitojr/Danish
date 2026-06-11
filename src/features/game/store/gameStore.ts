@@ -495,7 +495,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       isPlayerTurn: deriveIsPlayerTurn(next),
     })
     const BOT_EMOTES = ['😊', '😐', '😍', '😵']
-    if (Math.random() < 0.2)
+    if (Math.random() < 0.3)
+      // 30% chance to send an emote after playing
       get().sendEmote(
         bot.id,
         BOT_EMOTES[Math.floor(Math.random() * BOT_EMOTES.length)]

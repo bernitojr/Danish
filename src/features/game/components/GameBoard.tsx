@@ -91,8 +91,7 @@ export function GameBoard() {
       const sweptIds = prev.pile.map((c) => c.id)
       const lastDiscardCard = gameState.discard.at(-1)
       const isBotTen =
-        prev.currentPlayerIndex !== 0 &&
-        lastDiscardCard?.rank === '10'
+        prev.currentPlayerIndex !== 0 && lastDiscardCard?.rank === '10'
 
       if (isBotTen) {
         const bot = prev.players[prev.currentPlayerIndex]
@@ -223,6 +222,7 @@ export function GameBoard() {
     flyPileToDiscard,
     flyAttack,
     flyCardFromPlayerToPile,
+    flyPileToHand,
   ])
 
   useEffect(() => {
