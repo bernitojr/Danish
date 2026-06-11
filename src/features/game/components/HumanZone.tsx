@@ -69,7 +69,7 @@ export function HumanZone() {
     >
       {cannotPlay && pile.length > 0 && (
         <button
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse z-50 relative"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg z-50 relative"
           style={{
             background: 'hsl(var(--delete))',
             color: 'hsl(var(--primary-foreground))',
@@ -82,7 +82,7 @@ export function HumanZone() {
       )}
       {canPassTurn && (
         <button
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg animate-pulse z-50 relative"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-semibold text-sm transition-all hover:opacity-90 hover:-translate-y-0.5 shadow-lg z-50 relative"
           style={{
             background: 'hsl(var(--warning))',
             color: 'hsl(var(--foreground-contrast))',
