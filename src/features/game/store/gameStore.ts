@@ -477,9 +477,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     // For Ace: target the opponent with the fewest remaining cards
     let targetId: string | null = null
-    if (botCards[0].rank === 'A') {
+
+    // Check if this play requires an attack target:
+    // 1. Direct Ace play
+    // 2. 3 mirroring an Ace (lastEffectiveCard is Ace)
+    const isAcePlay = botCards[0].rank === 'A'
+    const isThreeMirroringAce =
+      botCards[0].rank === '3' &&
+      gs.turnContext.lastEffectiveCard?.rank === 'A'
+
+    if (isAcePlay || isThreeMirroringAce) {
       const others = gs.players.filter(
-        (p) => p.id !== bot.id && totalCards(p) > 0
+        (p) => p.id !== bot.id && !p.isFinished && totalCards(p) > 0
       )
       if (others.length > 0) {
         targetId = others.reduce((t, p) =>

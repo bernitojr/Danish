@@ -523,11 +523,23 @@ export function getValidMoves(player: Player, state: GameState): Card[] {
 
   const result: Card[] = [];
   for (const group of byRank.values()) {
+    // Find the best representative card for this rank:
+    // under suit constraints, prefer a card that matches the required suit.
+    const requiredSuit = state.turnContext.mustFollowSuit;
+    const representative = requiredSuit
+      ? (group.find(c => c.suit === requiredSuit) ?? group[0])
+      : group[0];
+
     let canPlay = false;
-    for (let n = 1; n <= group.length && !canPlay; n++) {
-      if (isValidPlay(group.slice(0, n), state)) canPlay = true;
+    // Test singles using the representative card
+    if (isValidPlay([representative], state)) canPlay = true;
+    // Test pairs and larger groups if single didn't work
+    if (!canPlay) {
+      for (let n = 2; n <= group.length && !canPlay; n++) {
+        if (isValidPlay(group.slice(0, n), state)) canPlay = true;
+      }
     }
-    if (canPlay) result.push(group[0]);
+    if (canPlay) result.push(representative);
   }
 
   return result;
