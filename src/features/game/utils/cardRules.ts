@@ -1,49 +1,60 @@
-import type { BotDifficulty, Card, GameState, LogEntry, Player, RulesConfig, TurnContext } from '@/features/game/utils/types';
-import { createDeck } from '@/features/game/utils/deck';
+import type {
+  BotDifficulty,
+  Card,
+  GameState,
+  LogEntry,
+  Player,
+  RulesConfig,
+  TurnContext,
+} from '@/features/game/utils/types'
+import { createDeck } from '@/features/game/utils/deck'
 
 const SUIT_GLYPH: Record<Card['suit'], string> = {
-  hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠',
-};
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣',
+  spades: '♠',
+}
 
 function formatPlayedCards(cards: Card[]): string {
-  return cards.map(card => `${card.rank}${SUIT_GLYPH[card.suit]}`).join(' ');
+  return cards.map((card) => `${card.rank}${SUIT_GLYPH[card.suit]}`).join(' ')
 }
 
 function effectSuffix(
   cards: Card[],
   state: GameState,
   targetId: string | null,
-  isFourOfAKind: boolean,
+  isFourOfAKind: boolean
 ): string {
-  const rank = cards[0].rank;
-  const n = state.players.length;
+  const rank = cards[0].rank
+  const n = state.players.length
 
-  if (isFourOfAKind) return ' — carré ! coupe !';
-  if (rank === '10') return ' — coupe !';
+  if (isFourOfAKind) return ' — carré ! coupe !'
+  if (rank === '10') return ' — coupe !'
 
   switch (rank) {
     case '8': {
-      const skipIdx = (state.currentPlayerIndex + 1) % n;
-      const skipped = state.players[skipIdx];
-      return skipped ? ` — ${skipped.name} passe !` : '';
+      const skipIdx = (state.currentPlayerIndex + 1) % n
+      const skipped = state.players[skipIdx]
+      return skipped ? ` — ${skipped.name} passe !` : ''
     }
     case 'J':
-      return ' — doublon obligatoire !';
+      return ' — doublon obligatoire !'
     case '7':
-      return ' — en dessous de 7 !';
+      return ' — en dessous de 7 !'
     case '6': {
-      const lastSix = cards[cards.length - 1];
-      return ` — suit ${SUIT_GLYPH[lastSix.suit]} obligatoire !`;
+      const lastSix = cards[cards.length - 1]
+      return ` — suit ${SUIT_GLYPH[lastSix.suit]} obligatoire !`
     }
     case '2':
-      return ' — remise à zéro !';
+      return ' — remise à zéro !'
     case 'A': {
-      if (!targetId) return '';
-      const target = state.players.find(p => p.id === targetId);
-      return target ? ` — attaque ${target.name} !` : '';
+      if (!targetId) return ''
+      const target = state.players.find((p) => p.id === targetId)
+      return target ? ` — attaque ${target.name} !` : ''
     }
     default:
-      return '';
+      return ''
   }
 }
 
@@ -59,27 +70,24 @@ function effectSuffix(
 export function appendLogAction(
   log: LogEntry[] | undefined,
   action: string,
-  actingIndex: number,
+  actingIndex: number
 ): LogEntry[] {
-  const prev = log ?? [];
-  const last = prev[prev.length - 1];
-  const startNewTurn = actingIndex === 0 && (last?.actions.length ?? 0) >= 1;
+  const prev = log ?? []
+  const last = prev[prev.length - 1]
+  const startNewTurn = actingIndex === 0 && (last?.actions.length ?? 0) >= 1
   if (!last || startNewTurn) {
-    return [...prev, { turn: prev.length + 1, actions: [action] }];
+    return [...prev, { turn: prev.length + 1, actions: [action] }]
   }
-  return [
-    ...prev.slice(0, -1),
-    { ...last, actions: [...last.actions, action] },
-  ];
+  return [...prev.slice(0, -1), { ...last, actions: [...last.actions, action] }]
 }
 
 // Ranks whose face value is ≤ 7 — the only ranks legal under the 7 rule.
 // 10 is NOT allowed under the 7 rule (handled explicitly in the 10 branch).
-const BELOW_7_RANKS = new Set<Card['rank']>(['2', '3', '4', '5', '6', '7']);
+const BELOW_7_RANKS = new Set<Card['rank']>(['2', '3', '4', '5', '6', '7'])
 
 // Only J may be played as a single to satisfy mustPlayDouble.
 // 2 and 3 require a pair. 10 bypasses this check entirely (handled in branch 1).
-const JACK_EXCEPTION_RANKS = new Set<Card['rank']>(['J']);
+const JACK_EXCEPTION_RANKS = new Set<Card['rank']>(['J'])
 
 /**
  * Returns the effective value of a card given the current rules config.
@@ -87,9 +95,9 @@ const JACK_EXCEPTION_RANKS = new Set<Card['rank']>(['J']);
  * all other cards return their fixed value.
  */
 export function getEffectiveValue(card: Card, config: RulesConfig): number {
-  if (card.rank === 'Q') return config.mode === 'matriarchal' ? 10 : 9;
-  if (card.rank === 'K') return config.mode === 'matriarchal' ? 9 : 10;
-  return card.value;
+  if (card.rank === 'Q') return config.mode === 'matriarchal' ? 10 : 9
+  if (card.rank === 'K') return config.mode === 'matriarchal' ? 9 : 10
+  return card.value
 }
 
 /**
@@ -106,14 +114,14 @@ export function getEffectiveValue(card: Card, config: RulesConfig): number {
  * Pure function — never mutates state.
  */
 export function isValidPlay(cards: Card[], state: GameState): boolean {
-  if (cards.length === 0) return false;
+  if (cards.length === 0) return false
 
   // Playing N identical cards is always allowed — verify all share the same rank.
-  const rank = cards[0].rank;
-  if (!cards.every(c => c.rank === rank)) return false;
+  const rank = cards[0].rank
+  if (!cards.every((c) => c.rank === rank)) return false
 
-  const card = cards[0];
-  const { turnContext, pile, config } = state;
+  const card = cards[0]
+  const { turnContext, pile, config } = state
 
   // ── 1. 10 ────────────────────────────────────────────────────────────────
   // 10 cuts the pile and overrides every constraint, with three exceptions:
@@ -122,10 +130,14 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
   //   c) under Jack rule, a single 10 does not satisfy the doublon — only a
   //      pair of 10s (which still cuts) is legal
   if (rank === '10') {
-    if (turnContext.mustPlayBelow7) return false;
-    if (turnContext.mustFollowSuit !== null && card.suit !== turnContext.mustFollowSuit) return false;
-    if (turnContext.mustPlayDouble && cards.length < 2) return false;
-    return true;
+    if (turnContext.mustPlayBelow7) return false
+    if (
+      turnContext.mustFollowSuit !== null &&
+      card.suit !== turnContext.mustFollowSuit
+    )
+      return false
+    if (turnContext.mustPlayDouble && cards.length < 2) return false
+    return true
   }
 
   // ── 2. Jack rule — must play a double ────────────────────────────────────
@@ -133,11 +145,11 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
   // Once satisfied, pairs of ANY value are legal (including lower than J) — so
   // we return immediately and skip the value comparison.
   if (turnContext.mustPlayDouble) {
-    if (!JACK_EXCEPTION_RANKS.has(rank) && cards.length < 2) return false;
+    if (!JACK_EXCEPTION_RANKS.has(rank) && cards.length < 2) return false
     // Obligation satisfied — bypass value check. Only rank '4' on an empty pile
     // remains forbidden (cannot open a fresh pile with the weakest card).
-    if (pile.length === 0 && rank === '4') return false;
-    return true;
+    // if (pile.length === 0 && rank === '4') return false
+    return true
   }
 
   // ── 3. Seven rule — must play ≤ 7 ────────────────────────────────────────
@@ -146,8 +158,8 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
   // bypassed, otherwise 4/5/6 (values 1–3) would fail the ≥ pile-top check
   // since lastEffectiveCard is still the 7 (value 4).
   if (turnContext.mustPlayBelow7) {
-    if (!BELOW_7_RANKS.has(rank)) return false;
-    return true;
+    if (!BELOW_7_RANKS.has(rank)) return false
+    return true
   }
 
   // ── 4. Six rule — must follow suit and play higher ────────────────────────
@@ -155,16 +167,16 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
   // Specials 2, 3 of the SAME suit are valid (effect applies); wrong suit → invalid.
   // All other cards must match the required suit AND beat mustFollowAboveValue.
   if (turnContext.mustFollowSuit !== null) {
-    const requiredSuit = turnContext.mustFollowSuit;
+    const requiredSuit = turnContext.mustFollowSuit
     if (rank === '6') {
       // Another 6 of any suit is valid — fall through to remaining checks
     } else if (rank === '2' || rank === '3') {
-      if (card.suit !== requiredSuit) return false;
+      if (card.suit !== requiredSuit) return false
       // Same-suit 2/3: valid — fall through
     } else {
-      if (card.suit !== requiredSuit) return false;
-      const gateValue = turnContext.mustFollowAboveValue ?? 0;
-      if (getEffectiveValue(card, config) <= gateValue) return false;
+      if (card.suit !== requiredSuit) return false
+      const gateValue = turnContext.mustFollowAboveValue ?? 0
+      if (getEffectiveValue(card, config) <= gateValue) return false
     }
   }
 
@@ -172,21 +184,21 @@ export function isValidPlay(cards: Card[], state: GameState): boolean {
   // 4 cannot open a fresh pile (after 10 cuts or at game start).
   // After a 2 reset, pile.length > 0 → this branch is never reached, 4 is valid.
   if (pile.length === 0) {
-    return rank !== '4';
+    return rank !== '4'
   }
 
   // ── 6. Default value comparison ───────────────────────────────────────────
   // 3 copies the effective top of pile — it carries no value of its own and
   // therefore cannot be gated by a value comparison.
-  if (rank === '3') return true;
+  if (rank === '3') return true
 
   // Cards may equal or beat the effective pile top (>= not strict >).
   // lastEffectiveCard is null after a 2 reset (effective value 0),
   // which allows 4 (value 1) and any higher card to follow.
   const effectiveValue = turnContext.lastEffectiveCard
     ? getEffectiveValue(turnContext.lastEffectiveCard, config)
-    : 0;
-  return getEffectiveValue(card, config) >= effectiveValue;
+    : 0
+  return getEffectiveValue(card, config) >= effectiveValue
 }
 
 // ── Cleared context — used after any cut ──────────────────────────────────────
@@ -200,19 +212,19 @@ const CLEARED_CONTEXT: TurnContext = {
   lastPlayedValue: null,
   skippedPlayers: 0,
   attackTarget: null,
-};
+}
 
 // ── applyPlay helpers ─────────────────────────────────────────────────────────
 
 function removePlayedCards(
   player: Player,
-  playedIds: Set<string>,
+  playedIds: Set<string>
 ): { hand: Card[]; visibleCards: Card[]; hiddenCards: Card[] } {
   return {
-    hand: player.hand.filter(c => !playedIds.has(c.id)),
-    visibleCards: player.visibleCards.filter(c => !playedIds.has(c.id)),
-    hiddenCards: player.hiddenCards.filter(c => !playedIds.has(c.id)),
-  };
+    hand: player.hand.filter((c) => !playedIds.has(c.id)),
+    visibleCards: player.visibleCards.filter((c) => !playedIds.has(c.id)),
+    hiddenCards: player.hiddenCards.filter((c) => !playedIds.has(c.id)),
+  }
 }
 
 function buildThreeContext(
@@ -220,7 +232,7 @@ function buildThreeContext(
   mirrored: Card | null,
   targetId: string | null,
   config: RulesConfig,
-  cards: Card[],
+  cards: Card[]
 ): TurnContext {
   // Mirror the grandparent card's FULL effect forward (value + all context flags)
   return {
@@ -238,7 +250,7 @@ function buildThreeContext(
     skippedPlayers: mirrored?.rank === '8' ? cards.length : 0,
     // A → the player who plays the 3 chooses their own target
     attackTarget: mirrored?.rank === 'A' ? targetId : null,
-  };
+  }
 }
 
 function computeNextIndex(
@@ -248,25 +260,30 @@ function computeNextIndex(
   turnContext: TurnContext,
   players: Player[],
   currentIndex: number,
-  cards: Card[],
+  cards: Card[]
 ): number {
-  const n = players.length;
+  const n = players.length
 
   if (isCut) {
-    return currentIndex;
+    return currentIndex
   }
   if (rank === 'A' && targetId !== null) {
-    const found = players.findIndex(p => p.id === targetId);
-    return found !== -1 ? found : (currentIndex + 1) % n;
+    const found = players.findIndex((p) => p.id === targetId)
+    return found !== -1 ? found : (currentIndex + 1) % n
   }
-  if (rank === '3' && turnContext.lastEffectiveCard?.rank === 'A' && targetId !== null) {
+  if (
+    rank === '3' &&
+    turnContext.lastEffectiveCard?.rank === 'A' &&
+    targetId !== null
+  ) {
     // 3 mirrors Ace — redirect turn to the target chosen by the 3-player
-    const found = players.findIndex(p => p.id === targetId);
-    return found !== -1 ? found : (currentIndex + 1) % n;
+    const found = players.findIndex((p) => p.id === targetId)
+    return found !== -1 ? found : (currentIndex + 1) % n
   }
   // 3 mirroring an 8 propagates the skip — N threes skip N players (same as N eights)
-  const mirroredEight = rank === '3' && turnContext.lastEffectiveCard?.rank === '8';
-  const skip = rank === '8' || mirroredEight ? cards.length : 0;
+  const mirroredEight =
+    rank === '3' && turnContext.lastEffectiveCard?.rank === '8'
+  const skip = rank === '8' || mirroredEight ? cards.length : 0
 
   // 8 skip: N eights skip N ACTIVE players. Finished slots don't consume
   // the skip tally — walking a raw index offset can land on a finished
@@ -275,20 +292,20 @@ function computeNextIndex(
   // to the default +1 advance (which the bottom-of-applyPlay loop still
   // nudges past any finished slot).
   if (skip > 0) {
-    let idx = currentIndex;
-    let activeAdvances = 0;
-    const target = skip + 1;
+    let idx = currentIndex
+    let activeAdvances = 0
+    const target = skip + 1
     for (let i = 0; i < n * 2; i++) {
-      idx = (idx + 1) % n;
+      idx = (idx + 1) % n
       if (!players[idx]!.isFinished) {
-        activeAdvances++;
-        if (activeAdvances === target) return idx;
+        activeAdvances++
+        if (activeAdvances === target) return idx
       }
     }
-    return idx;
+    return idx
   }
 
-  return (currentIndex + 1) % n;
+  return (currentIndex + 1) % n
 }
 
 /**
@@ -309,49 +326,53 @@ function computeNextIndex(
 export function applyPlay(
   cards: Card[],
   targetId: string | null,
-  state: GameState,
+  state: GameState
 ): GameState {
-  const rank = cards[0].rank;
-  const card = cards[0];
-  const { turnContext, config } = state;
-  const currentPlayer = state.players[state.currentPlayerIndex];
+  const rank = cards[0].rank
+  const card = cards[0]
+  const { turnContext, config } = state
+  const currentPlayer = state.players[state.currentPlayerIndex]
 
   // Defensive: an Ace (or 3 mirroring an Ace) aimed at a finished player
   // cannot attack — drop the target so the turn falls back to the next
   // active player via the default advance. The UI should already exclude
   // finished players from the attack selector; this is a safety net.
   const resolvedTargetIdx =
-    targetId !== null ? state.players.findIndex(p => p.id === targetId) : -1;
+    targetId !== null ? state.players.findIndex((p) => p.id === targetId) : -1
   const effectiveTargetId =
     resolvedTargetIdx !== -1 && state.players[resolvedTargetIdx]!.isFinished
       ? null
-      : targetId;
+      : targetId
 
   // ── 1. Remove played cards from player zones ──────────────────────────────
-  const playedIds = new Set(cards.map(c => c.id));
-  const { hand: newHand, visibleCards: newVisible, hiddenCards: newHidden } =
-    removePlayedCards(currentPlayer, playedIds);
+  const playedIds = new Set(cards.map((c) => c.id))
+  const {
+    hand: newHand,
+    visibleCards: newVisible,
+    hiddenCards: newHidden,
+  } = removePlayedCards(currentPlayer, playedIds)
 
   // ── 2. Add played cards to pile ───────────────────────────────────────────
-  const grownPile = [...state.pile, ...cards];
+  const grownPile = [...state.pile, ...cards]
 
   // ── 3. Detect 4-of-a-kind and cut ────────────────────────────────────────
-  const effectiveVal = getEffectiveValue(card, config);
+  const effectiveVal = getEffectiveValue(card, config)
   const newConsecutive =
-    turnContext.lastPlayedValue !== null && effectiveVal === turnContext.lastPlayedValue
+    turnContext.lastPlayedValue !== null &&
+    effectiveVal === turnContext.lastPlayedValue
       ? turnContext.consecutiveSameValue + cards.length
-      : cards.length;
-  const isFourOfAKind = newConsecutive >= 4;
-  const isCut = rank === '10' || isFourOfAKind;
+      : cards.length
+  const isFourOfAKind = newConsecutive >= 4
+  const isCut = rank === '10' || isFourOfAKind
 
-  const finalPile = isCut ? [] : grownPile;
-  const finalDiscard = isCut ? [...state.discard, ...grownPile] : state.discard;
+  const finalPile = isCut ? [] : grownPile
+  const finalDiscard = isCut ? [...state.discard, ...grownPile] : state.discard
 
   // ── 4. Build new TurnContext ──────────────────────────────────────────────
-  let newContext: TurnContext;
+  let newContext: TurnContext
 
   if (isCut) {
-    newContext = { ...CLEARED_CONTEXT };
+    newContext = { ...CLEARED_CONTEXT }
   } else {
     const base: TurnContext = {
       mustPlayDouble: false,
@@ -363,68 +384,74 @@ export function applyPlay(
       lastPlayedValue: effectiveVal,
       skippedPlayers: 0,
       attackTarget: null,
-    };
+    }
 
     switch (rank) {
       case '2':
         // Reset effective pile value to 0; pile stays (no cut)
-        newContext = { ...base, lastEffectiveCard: null };
-        break;
+        newContext = { ...base, lastEffectiveCard: null }
+        break
 
       case '3': {
-        const mirrored = turnContext.lastEffectiveCard;
-        newContext = buildThreeContext(base, mirrored, effectiveTargetId, config, cards);
-        break;
+        const mirrored = turnContext.lastEffectiveCard
+        newContext = buildThreeContext(
+          base,
+          mirrored,
+          effectiveTargetId,
+          config,
+          cards
+        )
+        break
       }
 
       case '6': {
-        const lastSix = cards[cards.length - 1];
+        const lastSix = cards[cards.length - 1]
         newContext = {
           ...base,
           lastEffectiveCard: lastSix,
           mustFollowSuit: lastSix.suit,
           mustFollowAboveValue: getEffectiveValue(lastSix, config),
-        };
-        break;
+        }
+        break
       }
 
       case '7':
-        newContext = { ...base, mustPlayBelow7: true };
-        break;
+        newContext = { ...base, mustPlayBelow7: true }
+        break
 
       case '8':
         // N eights played → N players skipped; advancement is handled below
-        newContext = { ...base, skippedPlayers: cards.length };
-        break;
+        newContext = { ...base, skippedPlayers: cards.length }
+        break
 
       case 'J':
-        newContext = { ...base, mustPlayDouble: true };
-        break;
+        newContext = { ...base, mustPlayDouble: true }
+        break
 
       case 'A':
-        newContext = { ...base, attackTarget: effectiveTargetId };
-        break;
+        newContext = { ...base, attackTarget: effectiveTargetId }
+        break
 
       default:
-        newContext = base;
+        newContext = base
     }
   }
 
   // ── 5. Replenish hand from deck (up to 3 cards) ───────────────────────────
-  let repHand = newHand;
-  let repDeck = state.deck;
+  let repHand = newHand
+  let repDeck = state.deck
   while (repHand.length < 3 && repDeck.length > 0) {
-    repHand = [...repHand, repDeck[0]];
-    repDeck = repDeck.slice(1);
+    repHand = [...repHand, repDeck[0]]
+    repDeck = repDeck.slice(1)
   }
 
   // ── 6. Detect finish ──────────────────────────────────────────────────────
   const playerDone =
-    repHand.length === 0 && newVisible.length === 0 && newHidden.length === 0;
+    repHand.length === 0 && newVisible.length === 0 && newHidden.length === 0
   const newFinishOrder =
     playerDone && !state.finishOrder.includes(currentPlayer.id)
       ? [...state.finishOrder, currentPlayer.id]
-      : state.finishOrder;
+      : state.finishOrder
 
   // ── 7. Update player in players array ────────────────────────────────────
   const updatedPlayer: Player = {
@@ -433,13 +460,13 @@ export function applyPlay(
     visibleCards: newVisible,
     hiddenCards: newHidden,
     isFinished: currentPlayer.isFinished || playerDone,
-  };
+  }
   const newPlayers = state.players.map((p, i) =>
-    i === state.currentPlayerIndex ? updatedPlayer : p,
-  );
+    i === state.currentPlayerIndex ? updatedPlayer : p
+  )
 
   // ── 8. Advance to next player (skip finished players) ────────────────────
-  const n = state.players.length;
+  const n = state.players.length
   const rawNext = computeNextIndex(
     rank,
     isCut,
@@ -447,32 +474,36 @@ export function applyPlay(
     turnContext,
     state.players,
     state.currentPlayerIndex,
-    cards,
-  );
+    cards
+  )
 
-  let nextIndex = rawNext;
+  let nextIndex = rawNext
   for (let i = 0; i < n; i++) {
-    if (!newPlayers[nextIndex]!.isFinished) break;
-    nextIndex = (nextIndex + 1) % n;
+    if (!newPlayers[nextIndex]!.isFinished) break
+    nextIndex = (nextIndex + 1) % n
   }
 
   // ── 9. Check for game end ─────────────────────────────────────────────────
-  const activePlayers = newPlayers.filter(p => !p.isFinished);
-  let finalPhase: GameState['phase'] = state.phase;
-  let finalFinishOrder = newFinishOrder;
+  const activePlayers = newPlayers.filter((p) => !p.isFinished)
+  let finalPhase: GameState['phase'] = state.phase
+  let finalFinishOrder = newFinishOrder
 
   if (state.phase === 'PLAYING' && activePlayers.length === 1) {
-    finalPhase = 'FINISHED';
-    const loser = activePlayers[0]!;
+    finalPhase = 'FINISHED'
+    const loser = activePlayers[0]!
     if (!finalFinishOrder.includes(loser.id)) {
-      finalFinishOrder = [...finalFinishOrder, loser.id];
+      finalFinishOrder = [...finalFinishOrder, loser.id]
     }
   }
 
   // ── 10. Append action to log (grouped by round) ───────────────────────────
-  const suffix = effectSuffix(cards, state, effectiveTargetId, isFourOfAKind);
-  const actionText = `${currentPlayer.name} joue ${formatPlayedCards(cards)}${suffix}`;
-  const newLog = appendLogAction(state.log, actionText, state.currentPlayerIndex);
+  const suffix = effectSuffix(cards, state, effectiveTargetId, isFourOfAKind)
+  const actionText = `${currentPlayer.name} joue ${formatPlayedCards(cards)}${suffix}`
+  const newLog = appendLogAction(
+    state.log,
+    actionText,
+    state.currentPlayerIndex
+  )
 
   return {
     ...state,
@@ -487,11 +518,11 @@ export function applyPlay(
     validMoves: [],
     bestMove: null,
     log: newLog,
-  };
+  }
 }
 
 // ── Ranks to conserve — played only when no normal card is available ───────────
-const HOLD_RANKS = new Set<Card['rank']>(['2', '10', 'A']);
+const HOLD_RANKS = new Set<Card['rank']>(['2', '10', 'A'])
 
 /**
  * Returns all uniquely-playable cards for `player` in the current state.
@@ -512,37 +543,37 @@ export function getValidMoves(player: Player, state: GameState): Card[] {
       ? player.hand
       : player.visibleCards.length > 0
         ? player.visibleCards
-        : player.hiddenCards;
+        : player.hiddenCards
 
   // Group by rank, preserving first-seen insertion order
-  const byRank = new Map<Card['rank'], Card[]>();
+  const byRank = new Map<Card['rank'], Card[]>()
   for (const card of zone) {
-    const existing = byRank.get(card.rank);
-    byRank.set(card.rank, existing ? [...existing, card] : [card]);
+    const existing = byRank.get(card.rank)
+    byRank.set(card.rank, existing ? [...existing, card] : [card])
   }
 
-  const result: Card[] = [];
+  const result: Card[] = []
   for (const group of byRank.values()) {
     // Find the best representative card for this rank:
     // under suit constraints, prefer a card that matches the required suit.
-    const requiredSuit = state.turnContext.mustFollowSuit;
+    const requiredSuit = state.turnContext.mustFollowSuit
     const representative = requiredSuit
-      ? (group.find(c => c.suit === requiredSuit) ?? group[0])
-      : group[0];
+      ? (group.find((c) => c.suit === requiredSuit) ?? group[0])
+      : group[0]
 
-    let canPlay = false;
+    let canPlay = false
     // Test singles using the representative card
-    if (isValidPlay([representative], state)) canPlay = true;
+    if (isValidPlay([representative], state)) canPlay = true
     // Test pairs and larger groups if single didn't work
     if (!canPlay) {
       for (let n = 2; n <= group.length && !canPlay; n++) {
-        if (isValidPlay(group.slice(0, n), state)) canPlay = true;
+        if (isValidPlay(group.slice(0, n), state)) canPlay = true
       }
     }
-    if (canPlay) result.push(representative);
+    if (canPlay) result.push(representative)
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -557,8 +588,8 @@ export function getValidMoves(player: Player, state: GameState): Card[] {
  * Pure function — never mutates.
  */
 export function getBestMove(player: Player, state: GameState): Card | null {
-  const valid = getValidMoves(player, state);
-  if (valid.length === 0) return null;
+  const valid = getValidMoves(player, state)
+  if (valid.length === 0) return null
 
   // Active zone — used to count copies per rank for pair detection.
   const zone =
@@ -566,7 +597,7 @@ export function getBestMove(player: Player, state: GameState): Card | null {
       ? player.hand
       : player.visibleCards.length > 0
         ? player.visibleCards
-        : player.hiddenCards;
+        : player.hiddenCards
 
   // '3' (effective value 0) would otherwise win the weakest-card contest
   // every time, but it's a mirror card and best saved for defensive use
@@ -582,66 +613,78 @@ export function getBestMove(player: Player, state: GameState): Card | null {
   // single when the bot has 2+ of the same normal rank in its zone — doubles
   // empty the hand faster and set up 4-of-a-kind cuts. Specials (HOLD_RANKS)
   // stay filtered out of the pair consideration so we don't double-spend them.
-  const normals = valid.filter(c => {
-    if (HOLD_RANKS.has(c.rank)) return false;
-    if (c.rank === '3') return false;
-    return true;
-  });
+  const normals = valid.filter((c) => {
+    if (HOLD_RANKS.has(c.rank)) return false
+    if (c.rank === '3') return false
+    return true
+  })
   if (normals.length > 0) {
-    const pairables = normals.filter(c => {
-      const sameRank = zone.filter(z => z.rank === c.rank);
-      return sameRank.length >= 2 && isValidPlay(sameRank.slice(0, 2), state);
-    });
-    const pool = pairables.length > 0 ? pairables : normals;
+    const pairables = normals.filter((c) => {
+      const sameRank = zone.filter((z) => z.rank === c.rank)
+      return sameRank.length >= 2 && isValidPlay(sameRank.slice(0, 2), state)
+    })
+    const pool = pairables.length > 0 ? pairables : normals
     return pool.reduce((best, card) =>
-      getEffectiveValue(card, state.config) < getEffectiveValue(best, state.config) ? card : best,
-    );
+      getEffectiveValue(card, state.config) <
+      getEffectiveValue(best, state.config)
+        ? card
+        : best
+    )
   }
 
   // Only specials remain — apply hold heuristics
-  const ace = valid.find(c => c.rank === 'A');
+  const ace = valid.find((c) => c.rank === 'A')
   if (ace) {
     // Play Ace only when another player is clearly more advanced (fewest total cards).
     // Finished players are excluded — they cannot be attacked.
-    const others = state.players.filter(p => p.id !== player.id && !p.isFinished);
+    const others = state.players.filter(
+      (p) => p.id !== player.id && !p.isFinished
+    )
     if (others.length > 0) {
       const playerTotal =
-        player.hand.length + player.visibleCards.length + player.hiddenCards.length;
+        player.hand.length +
+        player.visibleCards.length +
+        player.hiddenCards.length
       const target = others.reduce((best, p) => {
-        const cntBest = best.hand.length + best.visibleCards.length + best.hiddenCards.length;
-        const cntP = p.hand.length + p.visibleCards.length + p.hiddenCards.length;
-        return cntP < cntBest ? p : best;
-      }, others[0]);
-      const targetTotal = target.hand.length + target.visibleCards.length + target.hiddenCards.length;
-      if (targetTotal < playerTotal) return ace;
+        const cntBest =
+          best.hand.length + best.visibleCards.length + best.hiddenCards.length
+        const cntP =
+          p.hand.length + p.visibleCards.length + p.hiddenCards.length
+        return cntP < cntBest ? p : best
+      }, others[0])
+      const targetTotal =
+        target.hand.length +
+        target.visibleCards.length +
+        target.hiddenCards.length
+      if (targetTotal < playerTotal) return ace
     }
   }
 
   // 10 cuts the pile — strong play; 2 resets — moderate; Ace falls back here
-  const ten = valid.find(c => c.rank === '10');
-  if (ten) return ten;
-  const two = valid.find(c => c.rank === '2');
-  if (two) return two;
-  if (ace) return ace;
+  const ten = valid.find((c) => c.rank === '10')
+  if (ten) return ten
+  const two = valid.find((c) => c.rank === '2')
+  if (two) return two
+  if (ace) return ace
   // '3' is held above by default — surface it here as the absolute last
   // resort or for forced-mirror scenarios (only legal card available).
-  const three = valid.find(c => c.rank === '3');
-  if (three) return three;
+  const three = valid.find((c) => c.rank === '3')
+  if (three) return three
 
-  return null; // unreachable if valid.length > 0, but satisfies TS
+  return null // unreachable if valid.length > 0, but satisfies TS
 }
 
 // ── initGame helper ───────────────────────────────────────────────────────────
 
 function shuffleDeck(cards: Card[]): Card[] {
-  const arr = [...cards];
+  const arr = [...cards]
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const tmp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = tmp;
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = tmp
   }
-  return arr;
+  return arr
 }
 
 /**
@@ -658,18 +701,18 @@ function shuffleDeck(cards: Card[]): Card[] {
  * Pure function — player objects are not mutated (new objects returned).
  */
 export function initGame(players: Player[], config: RulesConfig): GameState {
-  const shuffled = shuffleDeck(createDeck());
-  const n = players.length;
+  const shuffled = shuffleDeck(createDeck())
+  const n = players.length
 
   const dealtPlayers = players.map((player, i) => {
-    const offset = i * 9;
+    const offset = i * 9
     return {
       ...player,
       hiddenCards: shuffled.slice(offset, offset + 3),
       visibleCards: shuffled.slice(offset + 3, offset + 6),
       hand: shuffled.slice(offset + 6, offset + 9),
-    };
-  });
+    }
+  })
 
   return {
     phase: 'PREPARATION',
@@ -686,7 +729,7 @@ export function initGame(players: Player[], config: RulesConfig): GameState {
     emotes: [],
     finishOrder: [],
     log: [],
-  };
+  }
 }
 
 /**
@@ -707,47 +750,48 @@ export function initGame(players: Player[], config: RulesConfig): GameState {
 export function getBotMove(
   bot: Player,
   state: GameState,
-  difficulty: BotDifficulty,
+  difficulty: BotDifficulty
 ): Card[] {
-  const valid = getValidMoves(bot, state);
-  if (valid.length === 0) return [];
+  const valid = getValidMoves(bot, state)
+  if (valid.length === 0) return []
 
   // Pick a representative card based on difficulty
-  let picked: Card;
+  let picked: Card
   if (difficulty === 'easy') {
-    picked = valid[Math.floor(Math.random() * valid.length)];
+    picked = valid[Math.floor(Math.random() * valid.length)]
   } else {
     // medium / hard: delegate to the shared heuristic
-    const best = getBestMove(bot, state);
-    if (!best) return [];
-    picked = best;
+    const best = getBestMove(bot, state)
+    if (!best) return []
+    picked = best
   }
 
   // Determine the bot's active zone (mirrors getValidMoves zone logic)
-  const isHiddenZone = bot.hand.length === 0 && bot.visibleCards.length === 0;
-  const zone = bot.hand.length > 0
-    ? bot.hand
-    : bot.visibleCards.length > 0
-      ? bot.visibleCards
-      : bot.hiddenCards;
+  const isHiddenZone = bot.hand.length === 0 && bot.visibleCards.length === 0
+  const zone =
+    bot.hand.length > 0
+      ? bot.hand
+      : bot.visibleCards.length > 0
+        ? bot.visibleCards
+        : bot.hiddenCards
 
   // Resolve picked against the bot's own zone by rank — guards against any
   // code path that could hand back a card object not physically in the zone.
-  const sameRank = zone.filter(c => c.rank === picked.rank);
-  const actualCard = sameRank[0] ?? picked;
+  const sameRank = zone.filter((c) => c.rank === picked.rank)
+  const actualCard = sameRank[0] ?? picked
 
   // Hidden zone: cards are face-down, the bot cannot knowingly build a pair.
   // Always flip a single card — even under mustPlayDouble, where the blind
   // reveal will likely fail isValidPlay and trigger the sweep-into-hand path.
-  if (isHiddenZone) return [actualCard];
+  if (isHiddenZone) return [actualCard]
 
   // Unified pair promotion: play a pair whenever the zone has 2+ of the
   // picked rank AND the pair is legal. Covers both the voluntary double
   // (empties hand faster, sets up 4-of-a-kind) and the mustPlayDouble
   // (Jack rule) case.
   if (sameRank.length >= 2 && isValidPlay(sameRank.slice(0, 2), state)) {
-    return sameRank.slice(0, 2);
+    return sameRank.slice(0, 2)
   }
 
-  return [actualCard];
+  return [actualCard]
 }

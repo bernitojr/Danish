@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createDeck } from '@/features/game/utils/deck';
 import { getValidMoves, getBestMove } from '@/features/game/utils/cardRules';
 import { useGameStore } from '@/features/game/store/gameStore';
@@ -101,6 +102,7 @@ function RankSuitPicker({
 }
 
 export function DebugPage() {
+  const navigate = useNavigate();
   const [hand, setHand] = useState<Card[]>([]);
   const [visible, setVisible] = useState<Card[]>([]);
   const [hidden, setHidden] = useState<Card[]>([]);
@@ -220,9 +222,7 @@ export function DebugPage() {
     };
 
     useGameStore.setState({ gameState: final, isPlayerTurn: true, stateHistory: [], isDebugMode: true });
-    // Push without reload to preserve Zustand state, then trigger App re-render
-    window.history.pushState({}, '', '/game');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    navigate('/game');
   }
 
   function handleRetour(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -230,8 +230,7 @@ export function DebugPage() {
     // doesn't inherit it.
     e.preventDefault();
     useGameStore.getState().setDebugMode(false);
-    window.history.pushState({}, '', '/');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    navigate('/');
   }
 
   return (

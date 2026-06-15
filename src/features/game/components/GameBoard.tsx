@@ -196,6 +196,7 @@ export function GameBoard() {
                 message: 'Même pas un petit 4 ?',
               }
               break
+
             case 'A':
               emote = {
                 playerId: lastPlay.playerId,

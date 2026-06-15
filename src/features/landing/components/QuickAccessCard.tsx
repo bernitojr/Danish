@@ -57,7 +57,6 @@ const STATIC_CARDS = [
   },
 ]
 
-
 export function QuickAccessCards() {
   const navigate = useNavigate()
 
@@ -78,10 +77,10 @@ export function QuickAccessCards() {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Card 1 — Règles */}
-          <CardStatic
+          {/* <CardStatic
             data={STATIC_CARDS[0]!}
             onClick={() => navigate(STATIC_CARDS[0]!.onClickPath)}
-          />
+          /> */}
 
           {/* Card 2 — Jouer (interactive) */}
           <CardPlay onPlay={handlePlay} />
@@ -185,7 +184,8 @@ function CardPlay({ onPlay }: CardPlayProps) {
           Jouer
         </div>
         <p className="text-sm text-[hsl(var(--foreground-secondary))] leading-relaxed">
-          Lance une nouvelle partie contre des bots. Choisis la difficulté avant de jouer.
+          Lance une nouvelle partie contre des bots. Choisis la difficulté avant
+          de jouer.
         </p>
       </div>
 
