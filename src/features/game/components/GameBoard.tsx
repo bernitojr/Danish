@@ -8,6 +8,8 @@ import { CentrePiles } from './CentrePiles'
 import { PreparationPanel } from './PreparationPanel'
 import { HumanZone } from './HumanZone'
 import { GameSidebar } from './GameSidebar'
+import { GameSidebarFab } from './GameSidebarFab'
+import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
 import type { Card, GameState } from '@/features/game/utils/types'
 import { useGameResult } from '@/features/profil/hooks/useGameResult'
 import { GameBoardProvider } from '@/features/game/contexts/GameBoardContext'
@@ -64,6 +66,7 @@ export function GameBoard() {
   const lastPlayRef = useRef<{ playerId: string; card: Card } | null>(null)
   const { push: addLog } = useGameLog(gameState, isPlayerTurn)
   useBotPreparation()
+  const isCompact = useIsCompactBoard()
 
   // ── Effects ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -602,7 +605,8 @@ export function GameBoard() {
           <HumanZone />
         </div>
 
-        <GameSidebar />
+        {!isCompact && <GameSidebar />}
+        <GameSidebarFab />
       </div>
     </GameBoardProvider>
   )
