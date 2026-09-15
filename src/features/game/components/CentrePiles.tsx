@@ -3,11 +3,19 @@ import { useGameBoardContext } from '@/features/game/contexts/GameBoardContext'
 import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 import { GameCard } from './GameCard'
 import { AnimatePresence, motion } from 'framer-motion'
+import {
+  getCardDims,
+  CARD_W_DESKTOP,
+  CARD_W_COMPACT,
+} from '@/features/game/utils/cardDims'
+import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
 
 export function CentrePiles() {
   const gameState = useGameStore((s) => s.gameState)
   const { registerPileRef, registerFosseRef } = useCardAnimation()
   const { pileRing, handlePileClick, revealingHidden } = useGameBoardContext()
+  const isCompact = useIsCompactBoard()
+  const dims = getCardDims(isCompact ? CARD_W_COMPACT : CARD_W_DESKTOP)
 
   if (!gameState) return null
   const { pile, deck, discard } = gameState
@@ -21,7 +29,11 @@ export function CentrePiles() {
           <span className="text-xs" style={{ color: 'hsl(var(--primary))' }}>
             Fosse ({discard.length})
           </span>
-          <div ref={registerFosseRef} className="relative w-14 h-[78px]">
+          <div
+            ref={registerFosseRef}
+            className="relative"
+            style={{ width: dims.w, height: dims.h }}
+          >
             {discard.length === 0 && (
               <div
                 className="absolute inset-0 rounded-md flex items-center justify-center text-xs"
@@ -35,17 +47,32 @@ export function CentrePiles() {
             )}
             {discard.length >= 3 && (
               <div className="absolute inset-0 -rotate-6 -translate-x-4 opacity-60">
-                <GameCard card={discard[discard.length - 3]} state="normal" />
+                <GameCard
+                  card={discard[discard.length - 3]}
+                  state="normal"
+                  width={dims.w}
+                  height={dims.h}
+                />
               </div>
             )}
             {discard.length >= 2 && (
               <div className="absolute inset-0 -rotate-3 -translate-x-2 opacity-80">
-                <GameCard card={discard[discard.length - 2]} state="normal" />
+                <GameCard
+                  card={discard[discard.length - 2]}
+                  state="normal"
+                  width={dims.w}
+                  height={dims.h}
+                />
               </div>
             )}
             {discard.length >= 1 && (
               <div className="absolute inset-0">
-                <GameCard card={discard[discard.length - 1]} state="normal" />
+                <GameCard
+                  card={discard[discard.length - 1]}
+                  state="normal"
+                  width={dims.w}
+                  height={dims.h}
+                />
               </div>
             )}
           </div>
@@ -54,11 +81,17 @@ export function CentrePiles() {
           <span className="text-white/60 text-xs">Pile ({pile.length})</span>
           <div
             ref={(el) => registerPileRef(el)}
-            className={`relative w-14 h-[78px] cursor-pointer rounded-md ${pileRing}`}
+            className={`relative cursor-pointer rounded-md ${pileRing}`}
+            style={{ width: dims.w, height: dims.h }}
             onClick={handlePileClick}
           >
             {pile.length === 0 && !revealingHidden && (
-              <GameCard card={null} state="empty" />
+              <GameCard
+                card={null}
+                state="empty"
+                width={dims.w}
+                height={dims.h}
+              />
             )}
             <AnimatePresence>
               {pileTop3.map((card, i) => {
@@ -79,14 +112,24 @@ export function CentrePiles() {
                     }}
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   >
-                    <GameCard card={card} state="normal" />
+                    <GameCard
+                      card={card}
+                      state="normal"
+                      width={dims.w}
+                      height={dims.h}
+                    />
                   </motion.div>
                 )
               })}
             </AnimatePresence>
             {revealingHidden && (
               <div className="absolute inset-0 ring-2 ring-yellow-400 rounded-md animate-pulse">
-                <GameCard card={revealingHidden} state="normal" />
+                <GameCard
+                  card={revealingHidden}
+                  state="normal"
+                  width={dims.w}
+                  height={dims.h}
+                />
               </div>
             )}
           </div>
@@ -94,11 +137,19 @@ export function CentrePiles() {
         <div className="flex flex-col items-center gap-1">
           <span className="text-white/60 text-xs">Deck ({deck.length})</span>
           {deck.length === 0 ? (
-            <div className="w-14 h-[78px] rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm">
+            <div
+              className="rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm"
+              style={{ width: dims.w, height: dims.h }}
+            >
               0
             </div>
           ) : (
-            <GameCard card={null} state="hidden" />
+            <GameCard
+              card={null}
+              state="hidden"
+              width={dims.w}
+              height={dims.h}
+            />
           )}
         </div>
       </div>

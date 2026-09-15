@@ -7,9 +7,11 @@ import { BotZone } from './BotZone'
 import { CentrePiles } from './CentrePiles'
 import { PreparationPanel } from './PreparationPanel'
 import { HumanZone } from './HumanZone'
+import { BoardLayoutCompact } from './BoardLayoutCompact'
 import { GameSidebar } from './GameSidebar'
 import { GameSidebarFab } from './GameSidebarFab'
 import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
+import useFitScale from '@/features/game/hooks/useFitScale'
 import type { Card, GameState } from '@/features/game/utils/types'
 import { useGameResult } from '@/features/profil/hooks/useGameResult'
 import { GameBoardProvider } from '@/features/game/contexts/GameBoardContext'
@@ -17,6 +19,10 @@ import { useBubbles } from '@/features/game/contexts/BubbleContext'
 import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 
 const BOT_DELAY_MS = { easy: 2500, medium: 3000, hard: 4000 } as const
+
+// Design box fixe englobant l'ovale (1100×645) + HumanZone en dessous.
+const DESIGN_W = 1100
+const DESIGN_H = 720
 
 // Suit name lookup for contextual emotes (e.g. "Comme ça t'as pas de cœur ?").
 const SUIT_NAME: Record<Card['suit'], string> = {
@@ -67,6 +73,7 @@ export function GameBoard() {
   const { push: addLog } = useGameLog(gameState, isPlayerTurn)
   useBotPreparation()
   const isCompact = useIsCompactBoard()
+  const { ref: zoneRef, scale } = useFitScale(DESIGN_W, DESIGN_H)
 
   // ── Effects ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -458,6 +465,7 @@ export function GameBoard() {
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* ── Game zone (left column) ── */}
         <div
+          ref={zoneRef}
           className="relative flex-1 min-h-0 overflow-hidden"
           style={{ background: 'hsl(var(--background-dark))' }}
         >
@@ -488,121 +496,141 @@ export function GameBoard() {
           )}
           <PreparationPanel />
 
-          {/* ── Shared container: oval table + 3×3 grid, sized + centred identically ── */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: 'min(1100px, 95vw)',
-              height: 'min(645px, 80vh)',
-              zIndex: 0,
-            }}
-          >
-            {/* Oval table — covers full container, behind grid */}
-            <div className="pointer-events-none absolute inset-0">
+          {!isCompact && (
+            <>
+              {/* ── Scaled wrapper: design box fixe, mis à l'échelle uniformément ── */}
               <div
                 style={{
                   position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  background:
-                    'radial-gradient(ellipse at 30% 30%,#8b5a2b,#6b3a1f 60%,#3d1f0a)',
-                  boxShadow:
-                    '0 0 0 4px #8b6030,0 0 0 7px #5a3510,0 20px 80px rgba(0,0,0,0.7)',
+                  top: '50%',
+                  left: '50%',
+                  width: DESIGN_W,
+                  height: DESIGN_H,
+                  transform: `translate(-50%, -50%) scale(${scale})`,
+                  transformOrigin: 'center',
                 }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 22,
-                  borderRadius: '50%',
-                  background:
-                    'radial-gradient(ellipse at 50% 35%,#1e6b3d 0%,#1a5c35 50%,#0f3d22 100%)',
-                  boxShadow: 'inset 0 4px 30px rgba(0,0,0,0.4)',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 22,
-                  borderRadius: '50%',
-                  backgroundImage:
-                    'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px)',
-                  backgroundSize: '12px 12px',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 30,
-                  borderRadius: '50%',
-                  border: '1.5px solid rgba(180,140,40,0.2)',
-                }}
-              />
-            </div>
+              >
+                {/* Container ovale — taille fixe, collé en haut du wrapper */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 1100,
+                    height: 645,
+                    zIndex: 0,
+                  }}
+                >
+                  {/* Oval table — covers full container, behind grid */}
+                  <div className="pointer-events-none absolute inset-0">
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '50%',
+                        background:
+                          'radial-gradient(ellipse at 30% 30%,#8b5a2b,#6b3a1f 60%,#3d1f0a)',
+                        boxShadow:
+                          '0 0 0 4px #8b6030,0 0 0 7px #5a3510,0 20px 80px rgba(0,0,0,0.7)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 22,
+                        borderRadius: '50%',
+                        background:
+                          'radial-gradient(ellipse at 50% 35%,#1e6b3d 0%,#1a5c35 50%,#0f3d22 100%)',
+                        boxShadow: 'inset 0 4px 30px rgba(0,0,0,0.4)',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 22,
+                        borderRadius: '50%',
+                        backgroundImage:
+                          'repeating-linear-gradient(0deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012) 0px,transparent 1px,transparent 12px)',
+                        backgroundSize: '12px 12px',
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 30,
+                        borderRadius: '50%',
+                        border: '1.5px solid rgba(180,140,40,0.2)',
+                      }}
+                    />
+                  </div>
 
-            {/* 3×3 grid — same bounds as oval */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 10,
-                display: 'grid',
-                gridTemplateColumns: '1fr 2fr 1fr',
-                gridTemplateRows: '1fr 1fr 1.4fr',
-              }}
-            >
-              {/* R1 C1 — empty */}
-              <div />
+                  {/* 3×3 grid — same bounds as oval */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      zIndex: 10,
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 2fr 1fr',
+                      gridTemplateRows: '1fr 1fr 1.4fr',
+                    }}
+                  >
+                    {/* R1 C1 — empty */}
+                    <div />
 
-              {/* R1 C2 — Bot top (bot2) */}
-              <div className="flex items-end justify-center pb-2">
-                <BotZone player={bot2} idx={2} bubbleDirection="down" />
+                    {/* R1 C2 — Bot top (bot2) */}
+                    <div className="flex items-end justify-center pb-2">
+                      <BotZone player={bot2} idx={2} bubbleDirection="down" />
+                    </div>
+
+                    {/* R1 C3 — empty */}
+                    <div />
+
+                    {/* R2 C1 — Bot left (bot1) */}
+                    <div className="flex items-center justify-end pr-2">
+                      <BotZone player={bot1} idx={1} bubbleDirection="right" />
+                    </div>
+
+                    {/* R2 C2 — empty */}
+                    <div />
+
+                    {/* R2 C3 — Bot right (bot3) */}
+                    <div className="flex items-center justify-start pl-2">
+                      <BotZone player={bot3} idx={3} bubbleDirection="left" />
+                    </div>
+
+                    {/* R3 C1 — empty */}
+                    <div />
+
+                    {/* R3 C2 — empty */}
+                    <div />
+
+                    {/* R3 C3 — empty */}
+                    <div />
+                  </div>
+
+                  {/* Centre piles — absolute inside the shared container */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '42%',
+                      left: '50%',
+                      transform: 'translate(-50%, -25%)',
+                      zIndex: 20,
+                    }}
+                  >
+                    <CentrePiles />
+                  </div>
+                </div>
+                {/* fin container ovale fixe */}
+
+                <HumanZone />
               </div>
-
-              {/* R1 C3 — empty */}
-              <div />
-
-              {/* R2 C1 — Bot left (bot1) */}
-              <div className="flex items-center justify-end pr-2">
-                <BotZone player={bot1} idx={1} bubbleDirection="right" />
-              </div>
-
-              {/* R2 C2 — empty */}
-              <div />
-
-              {/* R2 C3 — Bot right (bot3) */}
-              <div className="flex items-center justify-start pl-2">
-                <BotZone player={bot3} idx={3} bubbleDirection="left" />
-              </div>
-
-              {/* R3 C1 — empty */}
-              <div />
-
-              {/* R3 C2 — empty */}
-              <div />
-
-              {/* R3 C3 — empty */}
-              <div />
-            </div>
-
-            {/* Centre piles — absolute inside the shared container */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '42%',
-                left: '50%',
-                transform: 'translate(-50%, -25%)',
-                zIndex: 20,
-              }}
-            >
-              <CentrePiles />
-            </div>
-          </div>
-
-          <HumanZone />
+              {/* fin wrapper scalé */}
+            </>
+          )}
+          {isCompact && <BoardLayoutCompact />}
         </div>
 
         {!isCompact && <GameSidebar />}
