@@ -4,6 +4,12 @@ import { GameCard } from './GameCard'
 import { PlayerHeader } from '@/shared/PlayerHeader'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
+import {
+  getCardDims,
+  CARD_W_DESKTOP,
+  CARD_W_COMPACT,
+} from '@/features/game/utils/cardDims'
+import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
 
 type CardStateResult = 'normal' | 'selected' | 'optimal' | 'chosen'
 function cardState(
@@ -33,7 +39,15 @@ interface PlayerZoneProps {
   profileUsername?: string
   profileAvatarUrl?: string | null
   profileTitle?: string | null
+  turnBadgeSide?: 'left' | 'right' // côté du badge de tour en board compact
 }
+
+// Tap targets de la main humaine en board compact (valeurs en px design box).
+// 48 × 0,918 (échelle mesurée en 740×360) = 44px écran.
+const COMPACT_TAP_W = 48
+const COMPACT_TAP_EXTRA_BOTTOM = 6 // carte 42 + 6 = 48 → 44px écran
+// Largeur max de l'éventail : au-delà de ~7 cartes le pas se resserre.
+const COMPACT_FAN_MAX_W = 360
 
 function FanRow({
   cards,
@@ -42,6 +56,7 @@ function FanRow({
   bestMove,
   selectedIds,
   onCardClick,
+  touchTargets = false,
 }: {
   cards: Card[]
   isHidden: boolean
@@ -49,17 +64,48 @@ function FanRow({
   bestMove: Card | null
   selectedIds: string[]
   onCardClick: (c: Card) => void
+  touchTargets?: boolean // main humaine : éventail écarté + bandes de tap (compact)
 }) {
   const { registerCardRef } = useCardAnimation()
+  const isCompact = useIsCompactBoard()
+  const dims = getCardDims(isCompact ? CARD_W_COMPACT : CARD_W_DESKTOP)
   const n = cards.length
-  const spread = n <= 1 ? 0 : Math.min(n * 6, 24)
+  // Compact : éventail à plat (spread 0 → ni rotation ni translateY), ce qui
+  // rend inutile la marge verticale qui absorbe le débord des cartes tournées.
+  const spread = isCompact || n <= 1 ? 0 : Math.min(n * 6, 24)
+  const vPadding = isCompact ? 0 : dims.fanVPadding
   const angles = cards.map((_, i) =>
     n <= 1 ? 0 : -spread / 2 + (spread / (n - 1)) * i
   )
-  const overlap = 25
-  const width = n <= 1 ? 64 : (n - 1) * overlap + 64
+  const tapStrips = isCompact && touchTargets
+  // Pas entre deux cartes : desktop et bots = chevauchement d'origine ; main
+  // humaine compact = COMPACT_TAP_W, resserré si la main dépasse la largeur max.
+  const overlap = tapStrips
+    ? n <= 1
+      ? 0
+      : Math.min(COMPACT_TAP_W, (COMPACT_FAN_MAX_W - dims.w) / (n - 1))
+    : dims.overlap
+  const width =
+    n <= 1
+      ? dims.w + dims.fanPadding
+      : (n - 1) * overlap + dims.w + dims.fanPadding
+  // Règle de hit-testing (tapStrips) : chaque carte possède une bande
+  // horizontale DISJOINTE des autres, donc aucun arbitrage laissé au navigateur.
+  // - pas ≥ largeur carte (cartes espacées) : bande de largeur `pas` centrée
+  //   sur la carte → un tap dans l'espace entre deux cartes va à la plus proche.
+  // - pas < largeur carte (cartes qui se chevauchent) : la bande commence au
+  //   bord gauche de la carte et s'arrête au bord gauche de la suivante, soit
+  //   exactement la partie visible (la carte suivante, au-dessus, recouvre le
+  //   reste) ; la dernière carte, entièrement visible, garde toute sa largeur.
+  // La bande déborde de COMPACT_TAP_EXTRA_BOTTOM sous la carte (vers le
+  // header, non interactif), jamais au-dessus (cartes de table cliquables en
+  // préparation). GameCard ne reçoit alors plus le clic : seule la bande l'a.
+  const stripOffset = Math.max(0, (overlap - dims.w) / 2)
   return (
-    <div className="relative" style={{ width, height: 95 }}>
+    <div
+      className="relative"
+      style={{ width, height: dims.h + vPadding }}
+    >
       <AnimatePresence>
         {cards.map((card, i) => {
           const rot = angles[i] ?? 0
@@ -87,13 +133,82 @@ function FanRow({
                     ? 'hidden'
                     : cardState(card, validMoves, bestMove, selectedIds)
                 }
-                onClick={isHidden ? undefined : () => onCardClick(card)}
+                onClick={
+                  isHidden || tapStrips ? undefined : () => onCardClick(card)
+                }
+                width={dims.w}
+                height={dims.h}
               />
+              {tapStrips && !isHidden && (
+                <div
+                  className="absolute top-0"
+                  style={{
+                    left: -stripOffset,
+                    width: i === n - 1 ? Math.max(dims.w, overlap) : overlap,
+                    height: dims.h + COMPACT_TAP_EXTRA_BOTTOM,
+                  }}
+                  onClick={() => onCardClick(card)}
+                />
+              )}
             </motion.div>
           )
         })}
       </AnimatePresence>
     </div>
+  )
+}
+
+// Badge "Ton Tour" / "Son tour". En overlay (board compact) il sort du flux,
+// posé à côté du header (côté `side`) : la hauteur de la zone ne dépend plus
+// du tour et le badge ne recouvre pas l'éventail de la main.
+function TurnBadge({
+  label,
+  overlay,
+  side,
+}: {
+  label: string
+  overlay: boolean
+  side: 'left' | 'right'
+}) {
+  const overlayClass = `absolute top-1/2 -translate-y-1/2 whitespace-nowrap pointer-events-none z-10 ${side === 'left' ? 'right-full mr-1' : 'left-full ml-1'}`
+  return (
+    <div
+      className={`${overlay ? overlayClass : 'mb-1'} px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide animate-pulse`}
+      style={{
+        background: 'hsl(var(--accent) / 0.15)',
+        border: '1px solid hsl(var(--accent) / 0.6)',
+        color: 'hsl(var(--accent))',
+        fontFamily: 'var(--font-display)',
+      }}
+    >
+      {label}
+    </div>
+  )
+}
+
+// Message d'aide contextuel. En overlay (board compact) il sort du flux et se
+// place à droite de son parent (qui doit être `relative`) : ne pousse rien et
+// ne recouvre aucune carte, ni le badge de tour posé au-dessus du header.
+function ZoneHint({
+  color,
+  overlay,
+  children,
+}: {
+  color: string
+  overlay: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <p
+      className={
+        overlay
+          ? 'absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-[10px] pointer-events-none z-10'
+          : 'text-[10px] mt-0.5'
+      }
+      style={{ color }}
+    >
+      {children}
+    </p>
   )
 }
 
@@ -112,6 +227,7 @@ export function PlayerZone({
   profileUsername,
   profileAvatarUrl,
   profileTitle,
+  turnBadgeSide = 'right',
 }: PlayerZoneProps) {
   const [pendingSwap, setPendingSwap] = useState<{
     card: Card
@@ -157,9 +273,21 @@ export function PlayerZone({
   }
 
   const { registerCardRef } = useCardAnimation()
+  const isCompact = useIsCompactBoard()
+  const dims = getCardDims(isCompact ? CARD_W_COMPACT : CARD_W_DESKTOP)
+  const tableGap = Math.round(dims.w * (4 / 56)) // 4 à 56px
+  const tableVOffset = Math.round(dims.w * (8 / 56)) // 8 à 56px
+
+  // Compact : chaque ligne (table, main) réserve la hauteur d'une carte même
+  // vide → la zone garde une hauteur fixe dans tous les états de jeu et le
+  // header ne saute pas quand un joueur n'a plus de cartes.
+  const rowMinHeight = isCompact ? dims.h : undefined
 
   const tableCards = (
-    <div className="relative flex gap-1">
+    <div
+      className="relative flex"
+      style={{ gap: tableGap, minHeight: rowMinHeight }}
+    >
       <AnimatePresence>
         {player.hiddenCards.map((c, i) => (
           <div key={c.id} className="relative">
@@ -176,12 +304,15 @@ export function PlayerZone({
                   isDebugMode ? 'normal' : hiddenActive ? 'selected' : 'hidden'
                 }
                 onClick={hiddenActive ? () => onCardClick(c) : undefined}
+                width={dims.w}
+                height={dims.h}
               />
             </motion.div>
             {sortedVisible[i] && (
               <motion.div
                 ref={(el) => registerCardRef(sortedVisible[i].id, el)}
-                className="absolute -top-2 left-0"
+                className="absolute"
+                style={{ top: -tableVOffset, left: 0 }}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
@@ -206,6 +337,8 @@ export function PlayerZone({
                         : 'normal'
                   }
                   onClick={() => handleVisibleClick(sortedVisible[i])}
+                  width={dims.w}
+                  height={dims.h}
                 />
               </motion.div>
             )}
@@ -219,18 +352,22 @@ export function PlayerZone({
     const displayHand = player.hand.slice(0, 5)
     const extra = player.hand.length - 5
     return (
-      <div className="flex flex-col items-center gap-1">
+      <div
+        className={`flex flex-col items-center ${isCompact ? 'gap-0.5' : 'gap-1'}`}
+      >
         {tableCards}
-        {player.hand.length > 0 && (
-          <div className="flex items-center">
-            <FanRow
-              cards={displayHand}
-              isHidden={!isDebugMode}
-              validMoves={[]}
-              bestMove={null}
-              selectedIds={[]}
-              onCardClick={() => {}}
-            />
+        {(isCompact || player.hand.length > 0) && (
+          <div className="flex items-center" style={{ minHeight: rowMinHeight }}>
+            {player.hand.length > 0 && (
+              <FanRow
+                cards={displayHand}
+                isHidden={!isDebugMode}
+                validMoves={[]}
+                bestMove={null}
+                selectedIds={[]}
+                onCardClick={() => {}}
+              />
+            )}
             {extra > 0 && (
               <span className="text-white/60 text-xs ml-1">+{extra}</span>
             )}
@@ -238,23 +375,18 @@ export function PlayerZone({
         )}
         <div className="relative flex flex-col items-center">
           {isCurrentPlayer && (
-            <div
-              className="mb-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide animate-pulse"
-              style={{
-                background: 'hsl(var(--accent) / 0.15)',
-                border: '1px solid hsl(var(--accent) / 0.6)',
-                color: 'hsl(var(--accent))',
-                fontFamily: 'var(--font-display)',
-              }}
-            >
-              Son tour
-            </div>
+            <TurnBadge
+              label="Son tour"
+              overlay={isCompact}
+              side={turnBadgeSide}
+            />
           )}
           <PlayerHeader
             username={player.name}
             avatarUrl={null}
             activeTitle={player.title ?? null}
             compact={true}
+            dense={isCompact}
           />
         </div>
       </div>
@@ -262,54 +394,62 @@ export function PlayerZone({
   }
 
   return (
-    <div className="flex flex-col items-center gap-1 overflow-visible">
-      <div className="flex flex-col items-center gap-0.5">
-        <span
-          className="text-[10px] uppercase tracking-wide"
-          style={{
-            color: 'hsl(var(--foreground-muted))',
-            letterSpacing: '0.08em',
-          }}
-        >
-          Sur la table
-        </span>
+    <div
+      className={`flex flex-col items-center overflow-visible ${isCompact ? 'gap-0.5' : 'gap-1'}`}
+    >
+      <div
+        className={`flex flex-col items-center gap-0.5 ${isCompact ? 'relative' : ''}`}
+      >
+        {!isCompact && (
+          <span
+            className="text-[10px] uppercase tracking-wide"
+            style={{
+              color: 'hsl(var(--foreground-muted))',
+              letterSpacing: '0.08em',
+            }}
+          >
+            Sur la table
+          </span>
+        )}
         {tableCards}
         {!isPreparing &&
           handEmpty &&
           visibleEmpty &&
           player.hiddenCards.length > 0 && (
-            <p
-              className="text-[10px] mt-0.5"
-              style={{ color: 'hsl(var(--warning))' }}
-            >
+            <ZoneHint color="hsl(var(--warning))" overlay={isCompact}>
               Retournez une carte cachée
-            </p>
+            </ZoneHint>
           )}
         {!isPreparing && handEmpty && !visibleEmpty && (
-          <p
-            className="text-[10px] mt-0.5"
-            style={{ color: 'hsl(var(--info))' }}
-          >
+          <ZoneHint color="hsl(var(--info))" overlay={isCompact}>
             Jouez vos cartes visibles
-          </p>
+          </ZoneHint>
         )}
       </div>
       <div
-        className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg overflow-visible ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}
-        style={{
-          background: 'hsl(var(--background-dark))',
-          border: '1px solid hsl(var(--border))',
-        }}
+        // Compact : z-10 → les bandes de tap (qui débordent sous les cartes) passent
+        // au-dessus du header, non interactif, mais restent sous la colonne d'actions (z-30).
+        className={`flex flex-col items-center gap-0.5 overflow-visible ${isCompact ? 'relative z-10' : 'px-3 py-1 rounded-lg'} ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}
+        style={
+          isCompact
+            ? undefined
+            : {
+                background: 'hsl(var(--background-dark))',
+                border: '1px solid hsl(var(--border))',
+              }
+        }
       >
-        <span
-          className="text-[10px] uppercase tracking-wide"
-          style={{
-            color: 'hsl(var(--foreground-muted))',
-            letterSpacing: '0.08em',
-          }}
-        >
-          En main
-        </span>
+        {!isCompact && (
+          <span
+            className="text-[10px] uppercase tracking-wide"
+            style={{
+              color: 'hsl(var(--foreground-muted))',
+              letterSpacing: '0.08em',
+            }}
+          >
+            En main
+          </span>
+        )}
         <div
           className="overflow-visible"
           style={{ transformOrigin: 'center bottom' }}
@@ -325,38 +465,31 @@ export function PlayerZone({
                 : selectedCardIds
             }
             onCardClick={handleHandClick}
+            touchTargets
           />
         </div>
         {isPreparing && pendingSwap && (
-          <p
-            className="text-[10px] mt-0.5"
-            style={{ color: 'hsl(var(--accent))' }}
-          >
+          <ZoneHint color="hsl(var(--accent))" overlay={isCompact}>
             {pendingSwap.zone === 'hand'
               ? 'Cliquez une carte visible'
               : 'Cliquez une carte en main'}
-          </p>
+          </ZoneHint>
         )}
       </div>
       <div className="relative flex flex-col items-center">
         {isCurrentPlayer && (
-          <div
-            className="mb-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide animate-pulse"
-            style={{
-              background: 'hsl(var(--accent) / 0.15)',
-              border: '1px solid hsl(var(--accent) / 0.6)',
-              color: 'hsl(var(--accent))',
-              fontFamily: 'var(--font-display)',
-            }}
-          >
-            Ton Tour
-          </div>
+          <TurnBadge
+            label="Ton Tour"
+            overlay={isCompact}
+            side={turnBadgeSide}
+          />
         )}
         <PlayerHeader
           username={profileUsername ?? player.name}
           avatarUrl={profileAvatarUrl ?? null}
           activeTitle={profileTitle ?? null}
           compact={true}
+          dense={isCompact}
         />
       </div>
     </div>

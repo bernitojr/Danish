@@ -40,6 +40,8 @@ export function BotZone({ player, idx, bubbleDirection = 'up' }: BotZoneProps) {
         onCardClick={() => {}}
         onSwap={() => {}}
         isDebugMode={isDebugMode}
+        // Bot de droite (bulle vers la gauche) : badge côté centre, sinon il sort de l'écran
+        turnBadgeSide={bubbleDirection === 'left' ? 'left' : 'right'}
       />
       {pendingAce && !player.isFinished && (
         <button

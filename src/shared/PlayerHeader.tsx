@@ -4,6 +4,7 @@ interface PlayerHeaderProps {
   activeTitle: string | null
   onAvatarClick?: () => void
   compact?: boolean
+  dense?: boolean // padding réduit (board compact mobile), indépendant de `compact`
 }
 
 export function PlayerHeader({
@@ -12,12 +13,19 @@ export function PlayerHeader({
   activeTitle,
   onAvatarClick,
   compact = false,
+  dense = false,
 }: PlayerHeaderProps) {
   const initials = username.slice(0, 2).toUpperCase() || '??'
+  const padding = dense ? 'px-2 py-0.5' : 'px-4 py-4'
   const rootClass = compact
-    ? 'flex items-center gap-2 px-4 py-4'
-    : 'flex items-center gap-3 px-4 py-4'
-  const avatarSize = compact ? 'w-7 h-7' : 'w-[52px] h-[52px]'
+    ? `flex items-center gap-2 ${padding}`
+    : `flex items-center gap-3 ${padding}`
+  // dense : l'avatar fixe la hauteur du header une fois le titre masqué
+  const avatarSize = dense
+    ? 'w-6 h-6'
+    : compact
+      ? 'w-7 h-7'
+      : 'w-[52px] h-[52px]'
   const initialsClass = compact
     ? 'text-[10px] font-bold text-[hsl(var(--foreground))]'
     : 'font-display font-extrabold text-lg text-[hsl(var(--foreground))]'
@@ -88,18 +96,20 @@ export function PlayerHeader({
             {username || '—'}
           </p>
         )}
-        {compact ? (
-          <p
-            className="text-[9px]"
-            style={{ color: 'hsl(var(--foreground-muted))' }}
-          >
-            {activeTitle ?? null}
-          </p>
-        ) : (
-          <p className="text-xs text-[hsl(var(--foreground))]/75 truncate drop-shadow-sm">
-            {activeTitle ?? null}
-          </p>
-        )}
+        {/* dense : une seule ligne, le titre est masqué (budget hauteur board compact) */}
+        {!dense &&
+          (compact ? (
+            <p
+              className="text-[9px]"
+              style={{ color: 'hsl(var(--foreground-muted))' }}
+            >
+              {activeTitle ?? null}
+            </p>
+          ) : (
+            <p className="text-xs text-[hsl(var(--foreground))]/75 truncate drop-shadow-sm">
+              {activeTitle ?? null}
+            </p>
+          ))}
       </div>
     </div>
   )

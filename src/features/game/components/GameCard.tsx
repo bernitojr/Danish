@@ -28,6 +28,8 @@ interface GameCardProps {
   state?: 'normal' | 'selected' | 'optimal' | 'chosen' | 'hidden' | 'empty'
   onClick?: () => void
   disabled?: boolean
+  width?: number
+  height?: number
 }
 
 export function GameCard({
@@ -35,6 +37,8 @@ export function GameCard({
   state = 'normal',
   onClick,
   disabled = false,
+  width,
+  height,
 }: GameCardProps) {
   const ringClass =
     state === 'selected'
@@ -45,8 +49,12 @@ export function GameCard({
           ? 'ring-2 ring-amber-700 shadow-[0_0_12px_rgba(180,83,9,0.5)]'
           : ''
 
-  const baseClass =
-    'w-14 h-[78px] rounded-md select-none flex-shrink-0 transition-all duration-150'
+  // Taille pilotée par props si fournies ; sinon fallback 56×78 (w-14 h-[78px]).
+  const sized = width != null && height != null
+  const sizeClass = sized ? '' : 'w-14 h-[78px]'
+  const sizeStyle = sized ? { width, height } : undefined
+  const logoSize = sized ? Math.round(width! * (32 / 56)) : undefined // 32 à 56px
+  const baseClass = `${sizeClass} rounded-md select-none flex-shrink-0 transition-all duration-150`
   const cursorClass = disabled
     ? 'opacity-50 cursor-not-allowed'
     : onClick
@@ -57,6 +65,7 @@ export function GameCard({
     return (
       <div
         className={`${baseClass} border-2 border-dashed border-white/20 bg-white/5`}
+        style={sizeStyle}
       />
     )
   }
@@ -65,6 +74,7 @@ export function GameCard({
     return (
       <div
         className={`${baseClass} ${ringClass} ${cursorClass} relative overflow-hidden`}
+        style={sizeStyle}
         onClick={disabled ? undefined : onClick}
       >
         <div className="absolute inset-0 bg-[#e8dcc8] rounded-md" />
@@ -79,7 +89,12 @@ export function GameCard({
         <img
           src={logoBernitoCorp}
           alt=""
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 object-contain opacity-100 pointer-events-none"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 object-contain opacity-100 pointer-events-none ${logoSize != null ? '' : 'w-8 h-8'}`}
+          style={
+            logoSize != null
+              ? { width: logoSize, height: logoSize }
+              : undefined
+          }
         />
       </div>
     )
@@ -92,6 +107,7 @@ export function GameCard({
     return (
       <div
         className={`${baseClass} ${ringClass} ${cursorClass} bg-white/10 flex items-center justify-center text-xs text-white`}
+        style={sizeStyle}
       >
         {card.rank}
       </div>
@@ -101,6 +117,7 @@ export function GameCard({
   return (
     <div
       className={`${baseClass} ${ringClass} ${cursorClass} overflow-hidden shadow-[0_2px_8px_rgba(100,70,30,0.25)]`}
+      style={sizeStyle}
       onClick={disabled ? undefined : onClick}
     >
       <CardSvg className="w-full h-full" />

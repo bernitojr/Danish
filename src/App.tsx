@@ -10,6 +10,8 @@ import { PublicProfilePage } from './features/profil/pages/PublicProfilePage'
 import { LeaderboardPage } from './features/leaderboard/pages/LeaderboardPage'
 import { Nav } from './shared/Nav'
 import { Footer } from './shared/Footer'
+import { CompactGameBar } from '@/features/game/components/CompactGameBar'
+import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
 import { useTheme } from './hooks/useTheme'
 import { useAuthStore } from './stores/useAuthStore'
 import { useGameStore } from '@/features/game/store/gameStore'
@@ -53,9 +55,10 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function GameLayout({ children }: { children: React.ReactNode }) {
+  const isCompact = useIsCompactBoard()
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Nav />
+      {isCompact ? <CompactGameBar /> : <Nav />}
       <main className="flex flex-1 overflow-hidden min-h-0">{children}</main>
     </div>
   )
