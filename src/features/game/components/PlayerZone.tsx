@@ -42,6 +42,13 @@ interface PlayerZoneProps {
   turnBadgeSide?: 'left' | 'right' // côté du badge de tour en board compact
 }
 
+// Tap targets de la main humaine en board compact (valeurs en px design box).
+// 48 × 0,918 (échelle mesurée en 740×360) = 44px écran.
+const COMPACT_TAP_W = 48
+const COMPACT_TAP_EXTRA_BOTTOM = 6 // carte 42 + 6 = 48 → 44px écran
+// Largeur max de l'éventail : au-delà de ~7 cartes le pas se resserre.
+const COMPACT_FAN_MAX_W = 360
+
 function FanRow({
   cards,
   isHidden,
@@ -49,6 +56,7 @@ function FanRow({
   bestMove,
   selectedIds,
   onCardClick,
+  touchTargets = false,
 }: {
   cards: Card[]
   isHidden: boolean
@@ -56,6 +64,7 @@ function FanRow({
   bestMove: Card | null
   selectedIds: string[]
   onCardClick: (c: Card) => void
+  touchTargets?: boolean // main humaine : éventail écarté + bandes de tap (compact)
 }) {
   const { registerCardRef } = useCardAnimation()
   const isCompact = useIsCompactBoard()
@@ -68,11 +77,30 @@ function FanRow({
   const angles = cards.map((_, i) =>
     n <= 1 ? 0 : -spread / 2 + (spread / (n - 1)) * i
   )
-  const overlap = dims.overlap
+  const tapStrips = isCompact && touchTargets
+  // Pas entre deux cartes : desktop et bots = chevauchement d'origine ; main
+  // humaine compact = COMPACT_TAP_W, resserré si la main dépasse la largeur max.
+  const overlap = tapStrips
+    ? n <= 1
+      ? 0
+      : Math.min(COMPACT_TAP_W, (COMPACT_FAN_MAX_W - dims.w) / (n - 1))
+    : dims.overlap
   const width =
     n <= 1
       ? dims.w + dims.fanPadding
       : (n - 1) * overlap + dims.w + dims.fanPadding
+  // Règle de hit-testing (tapStrips) : chaque carte possède une bande
+  // horizontale DISJOINTE des autres, donc aucun arbitrage laissé au navigateur.
+  // - pas ≥ largeur carte (cartes espacées) : bande de largeur `pas` centrée
+  //   sur la carte → un tap dans l'espace entre deux cartes va à la plus proche.
+  // - pas < largeur carte (cartes qui se chevauchent) : la bande commence au
+  //   bord gauche de la carte et s'arrête au bord gauche de la suivante, soit
+  //   exactement la partie visible (la carte suivante, au-dessus, recouvre le
+  //   reste) ; la dernière carte, entièrement visible, garde toute sa largeur.
+  // La bande déborde de COMPACT_TAP_EXTRA_BOTTOM sous la carte (vers le
+  // header, non interactif), jamais au-dessus (cartes de table cliquables en
+  // préparation). GameCard ne reçoit alors plus le clic : seule la bande l'a.
+  const stripOffset = Math.max(0, (overlap - dims.w) / 2)
   return (
     <div
       className="relative"
@@ -105,10 +133,23 @@ function FanRow({
                     ? 'hidden'
                     : cardState(card, validMoves, bestMove, selectedIds)
                 }
-                onClick={isHidden ? undefined : () => onCardClick(card)}
+                onClick={
+                  isHidden || tapStrips ? undefined : () => onCardClick(card)
+                }
                 width={dims.w}
                 height={dims.h}
               />
+              {tapStrips && !isHidden && (
+                <div
+                  className="absolute top-0"
+                  style={{
+                    left: -stripOffset,
+                    width: i === n - 1 ? Math.max(dims.w, overlap) : overlap,
+                    height: dims.h + COMPACT_TAP_EXTRA_BOTTOM,
+                  }}
+                  onClick={() => onCardClick(card)}
+                />
+              )}
             </motion.div>
           )
         })}
@@ -237,8 +278,16 @@ export function PlayerZone({
   const tableGap = Math.round(dims.w * (4 / 56)) // 4 à 56px
   const tableVOffset = Math.round(dims.w * (8 / 56)) // 8 à 56px
 
+  // Compact : chaque ligne (table, main) réserve la hauteur d'une carte même
+  // vide → la zone garde une hauteur fixe dans tous les états de jeu et le
+  // header ne saute pas quand un joueur n'a plus de cartes.
+  const rowMinHeight = isCompact ? dims.h : undefined
+
   const tableCards = (
-    <div className="relative flex" style={{ gap: tableGap }}>
+    <div
+      className="relative flex"
+      style={{ gap: tableGap, minHeight: rowMinHeight }}
+    >
       <AnimatePresence>
         {player.hiddenCards.map((c, i) => (
           <div key={c.id} className="relative">
@@ -307,16 +356,18 @@ export function PlayerZone({
         className={`flex flex-col items-center ${isCompact ? 'gap-0.5' : 'gap-1'}`}
       >
         {tableCards}
-        {player.hand.length > 0 && (
-          <div className="flex items-center">
-            <FanRow
-              cards={displayHand}
-              isHidden={!isDebugMode}
-              validMoves={[]}
-              bestMove={null}
-              selectedIds={[]}
-              onCardClick={() => {}}
-            />
+        {(isCompact || player.hand.length > 0) && (
+          <div className="flex items-center" style={{ minHeight: rowMinHeight }}>
+            {player.hand.length > 0 && (
+              <FanRow
+                cards={displayHand}
+                isHidden={!isDebugMode}
+                validMoves={[]}
+                bestMove={null}
+                selectedIds={[]}
+                onCardClick={() => {}}
+              />
+            )}
             {extra > 0 && (
               <span className="text-white/60 text-xs ml-1">+{extra}</span>
             )}
@@ -376,7 +427,9 @@ export function PlayerZone({
         )}
       </div>
       <div
-        className={`flex flex-col items-center gap-0.5 overflow-visible ${isCompact ? 'relative' : 'px-3 py-1 rounded-lg'} ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}
+        // Compact : z-10 → les bandes de tap (qui débordent sous les cartes) passent
+        // au-dessus du header, non interactif, mais restent sous la colonne d'actions (z-30).
+        className={`flex flex-col items-center gap-0.5 overflow-visible ${isCompact ? 'relative z-10' : 'px-3 py-1 rounded-lg'} ${cannotPlay ? 'opacity-40 pointer-events-none' : ''}`}
         style={
           isCompact
             ? undefined
@@ -412,6 +465,7 @@ export function PlayerZone({
                 : selectedCardIds
             }
             onCardClick={handleHandClick}
+            touchTargets
           />
         </div>
         {isPreparing && pendingSwap && (

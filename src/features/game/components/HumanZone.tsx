@@ -5,8 +5,19 @@ import { usePublicProfile } from '@/features/profil/hooks/usePublicProfile'
 import { useGameBoardContext } from '@/features/game/contexts/GameBoardContext'
 import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
 import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
+import {
+  getCardDims,
+  CARD_W_COMPACT,
+} from '@/features/game/utils/cardDims'
 import { Bubble } from './Bubble'
 import { PlayerZone } from './PlayerZone'
+
+// Compact : la colonne d'actions est ancrée au CENTRE de la zone, à la
+// demi-largeur de la ligne de table (3 cartes) + 12px — et non plus au bord de
+// la zone. Sinon, élargir l'éventail pousserait la colonne vers le bot gauche.
+const COMPACT_CARD_W = getCardDims(CARD_W_COMPACT).w
+const COMPACT_ACTIONS_OFFSET =
+  Math.round((3 * COMPACT_CARD_W + 2 * Math.round(COMPACT_CARD_W * (4 / 56))) / 2) + 12
 
 export function HumanZone() {
   const gameState = useGameStore((s) => s.gameState)
@@ -76,7 +87,9 @@ export function HumanZone() {
         </button>
       )}
       {invalidMsg && (
-        <div className="px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full z-50 relative">
+        <div
+          className={`px-3 py-1 bg-red-900/80 text-red-200 text-xs rounded-full z-50 relative ${isCompact ? 'pointer-events-none' : ''}`}
+        >
           {invalidMsg}
         </div>
       )}
@@ -140,9 +153,15 @@ export function HumanZone() {
       {isCompact ? (
         // Compact : colonne hors flux à gauche de la zone → la hauteur de
         // HumanZone ne dépend plus des actions affichées.
-        // w-max : sans largeur explicite, un absolute en right-full se réduit à
-        // sa largeur min-content (boutons repliés sur plusieurs lignes).
-        <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 w-max flex flex-col items-end gap-2">
+        // w-max : sans largeur explicite, un absolute se réduit à sa largeur
+        // min-content (boutons repliés sur plusieurs lignes).
+        // z-30 : l'éventail élargi peut passer sous la colonne, uniquement dans
+        // des états où la main est inerte (cannotPlay, as en attente) ;
+        // invalidMsg (main encore jouable) est en pointer-events-none.
+        <div
+          className="absolute top-1/2 -translate-y-1/2 z-30 w-max flex flex-col items-end gap-2"
+          style={{ right: `calc(50% + ${COMPACT_ACTIONS_OFFSET}px)` }}
+        >
           {actionButtons}
           {aceChooser}
         </div>

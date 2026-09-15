@@ -10,6 +10,37 @@ import {
 } from '@/features/game/utils/cardDims'
 import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
 
+// Libellé "Nom (n)". Compact : à droite de la carte, sur deux lignes (order-last
+// dans une colonne passée en ligne) → la bande n'a plus que la hauteur d'une
+// carte. À droite car les piles empilées débordent vers la gauche.
+function PileLabel({
+  name,
+  count,
+  compact,
+  className = '',
+  style,
+}: {
+  name: string
+  count: number
+  compact: boolean
+  className?: string
+  style?: React.CSSProperties
+}) {
+  return compact ? (
+    <span
+      className={`order-last text-[10px] leading-tight ${className}`}
+      style={style}
+    >
+      {name}
+      <br />({count})
+    </span>
+  ) : (
+    <span className={`text-xs ${className}`} style={style}>
+      {name} ({count})
+    </span>
+  )
+}
+
 export function CentrePiles() {
   const gameState = useGameStore((s) => s.gameState)
   const { registerPileRef, registerFosseRef } = useCardAnimation()
@@ -20,15 +51,21 @@ export function CentrePiles() {
   if (!gameState) return null
   const { pile, deck, discard } = gameState
   const pileTop3 = pile.slice(-3)
+  const column = isCompact
+    ? 'flex items-center gap-1'
+    : 'flex flex-col items-center gap-1'
 
   return (
     <div className="relative flex flex-col items-center gap-2">
       <div className="flex items-center gap-6">
         {/* Fosse */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-xs" style={{ color: 'hsl(var(--primary))' }}>
-            Fosse ({discard.length})
-          </span>
+        <div className={column}>
+          <PileLabel
+            name="Fosse"
+            count={discard.length}
+            compact={isCompact}
+            style={{ color: 'hsl(var(--primary))' }}
+          />
           <div
             ref={registerFosseRef}
             className="relative"
@@ -77,8 +114,13 @@ export function CentrePiles() {
             )}
           </div>
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-white/60 text-xs">Pile ({pile.length})</span>
+        <div className={column}>
+          <PileLabel
+            name="Pile"
+            count={pile.length}
+            compact={isCompact}
+            className="text-white/60"
+          />
           <div
             ref={(el) => registerPileRef(el)}
             className={`relative cursor-pointer rounded-md ${pileRing}`}
@@ -134,8 +176,13 @@ export function CentrePiles() {
             )}
           </div>
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-white/60 text-xs">Deck ({deck.length})</span>
+        <div className={column}>
+          <PileLabel
+            name="Deck"
+            count={deck.length}
+            compact={isCompact}
+            className="text-white/60"
+          />
           {deck.length === 0 ? (
             <div
               className="rounded-lg border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 text-sm"
