@@ -494,7 +494,6 @@ export function GameBoard() {
               ↩ Retour
             </button>
           )}
-          <PreparationPanel />
 
           {!isCompact && (
             <>
@@ -621,6 +620,25 @@ export function GameBoard() {
                     }}
                   >
                     <CentrePiles />
+                  </div>
+
+                  {/* Panneau de préparation — centré sur la bande libre mesurée
+                      (design y 242,5 → 402, centre 322,25 ≈ 50% du container
+                      ovale), et non sur le centre des piles qui est 27px plus
+                      haut. w-max : sans lui, left:50% bornerait la largeur à
+                      550. z 25 → au-dessus des piles (20) ; HumanZone reste
+                      devant (z-20, hors de ce contexte d'empilement). */}
+                  <div
+                    className="w-max"
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 25,
+                    }}
+                  >
+                    <PreparationPanel />
                   </div>
                 </div>
                 {/* fin container ovale fixe */}

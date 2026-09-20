@@ -44,7 +44,8 @@ function PileLabel({
 export function CentrePiles() {
   const gameState = useGameStore((s) => s.gameState)
   const { registerPileRef, registerFosseRef } = useCardAnimation()
-  const { pileRing, handlePileClick, revealingHidden } = useGameBoardContext()
+  const { pileRing, handlePileClick, revealingHidden, isPreparing } =
+    useGameBoardContext()
   const isCompact = useIsCompactBoard()
   const dims = getCardDims(isCompact ? CARD_W_COMPACT : CARD_W_DESKTOP)
 
@@ -56,7 +57,12 @@ export function CentrePiles() {
     : 'flex flex-col items-center gap-1'
 
   return (
-    <div className="relative flex flex-col items-center gap-2">
+    // Masquées pendant la préparation, jamais démontées : les refs d'animation
+    // (registerPileRef / registerFosseRef) doivent rester valides.
+    <div
+      data-preparing={isPreparing}
+      className="relative flex flex-col items-center gap-2 transition-opacity duration-200 data-[preparing=true]:pointer-events-none data-[preparing=true]:opacity-0"
+    >
       <div className="flex items-center gap-6">
         {/* Fosse */}
         <div className={column}>

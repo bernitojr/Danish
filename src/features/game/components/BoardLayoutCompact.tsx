@@ -3,6 +3,7 @@ import useFitScale from '@/features/game/hooks/useFitScale'
 import { BotZone } from './BotZone'
 import { CentrePiles } from './CentrePiles'
 import { HumanZone } from './HumanZone'
+import { PreparationPanel } from './PreparationPanel'
 
 // Design box fixe (même pattern que GameBoard desktop) mise à l'échelle
 // uniformément. Budget vertical mesuré au rendu (8 états de jeu, W=30) :
@@ -137,6 +138,24 @@ export function BoardLayoutCompact() {
           }}
         >
           <CentrePiles />
+        </div>
+
+        {/* Panneau de préparation — centré sur la bande libre mesurée
+            (design y 128 → 212, centre 170 = COMPACT_DESIGN_H / 2). w-max :
+            sans lui, left:50% bornerait la largeur à 390 alors que la carte en
+            fait 421,4. z 16 → au-dessus des piles (15) et sous HumanZone (20),
+            qu'il ne chevauche pas (bande libre bornée à y 212). */}
+        <div
+          className="w-max"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 16,
+          }}
+        >
+          <PreparationPanel />
         </div>
 
         {/* BAS — main humaine. Rendue directement : HumanZone s'ancre lui-même
