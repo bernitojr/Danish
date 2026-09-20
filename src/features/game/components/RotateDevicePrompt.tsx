@@ -8,7 +8,7 @@ import useMediaQuery from '@/shared/hooks/useMediaQuery'
  */
 export function RotateDevicePrompt() {
   const isPhonePortrait = useMediaQuery(
-    '(pointer: coarse) and (orientation: portrait) and (max-width: 600px)',
+    '(pointer: coarse) and (orientation: portrait) and (max-width: 600px)'
   )
 
   if (!isPhonePortrait) return null
@@ -30,7 +30,7 @@ export function RotateDevicePrompt() {
       </h2>
 
       <p className="text-[hsl(var(--foreground-muted))]">
-        Le plateau se joue en mode paysage.
+        Le Danish se joue en mode paysage.
       </p>
     </div>
   )
