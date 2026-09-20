@@ -14,6 +14,7 @@ import useIsCompactBoard from '@/features/game/hooks/useIsCompactBoard'
 import useFitScale from '@/features/game/hooks/useFitScale'
 import type { Card, GameState } from '@/features/game/utils/types'
 import { useGameResult } from '@/features/profil/hooks/useGameResult'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { GameBoardProvider } from '@/features/game/contexts/GameBoardContext'
 import { useBubbles } from '@/features/game/contexts/BubbleContext'
 import { useCardAnimation } from '@/features/game/contexts/CardAnimationContext'
@@ -47,6 +48,7 @@ export function GameBoard() {
     startGame,
     difficulty,
   } = useGameStore()
+  const { profile } = useAuthStore()
   const { setBubbles } = useBubbles()
   const {
     flyCardToPile,
@@ -474,6 +476,7 @@ export function GameBoard() {
               players={players}
               finishOrder={finishOrder}
               humanId="human"
+              humanName={profile?.username}
               onHide={() => setShowEnd(false)}
               onReplay={() => {
                 resetGame()

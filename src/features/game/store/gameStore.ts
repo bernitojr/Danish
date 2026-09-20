@@ -151,6 +151,9 @@ export interface GameStore {
   difficulty: BotDifficulty
   isPlayerTurn: boolean
   isDebugMode: boolean
+  /** Le résultat de la partie en cours a déjà été envoyé à Supabase. Remis à
+   *  false par startGame / resetGame — voir useGameResult. */
+  resultRecorded: boolean
 
   startGame: (playerName: string, difficulty: BotDifficulty) => void
   playCards: (cards: Card[], targetId?: string | null) => boolean
@@ -166,6 +169,7 @@ export interface GameStore {
   setDebugMode: (v: boolean) => void
   setRulesMode: (mode: RulesConfig['mode']) => void
   setDifficulty: (d: BotDifficulty) => void
+  markResultRecorded: () => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -175,6 +179,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   difficulty: 'medium',
   isPlayerTurn: false,
   isDebugMode: false,
+  resultRecorded: false,
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
@@ -192,7 +197,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ...botProfiles.map((profile, i) => makeBotPlayer(i + 1, profile)),
     ]
     const gs = initGame(players, { mode: 'patriarchal' })
-    set({ gameState: gs, difficulty, isPlayerTurn: deriveIsPlayerTurn(gs) })
+    set({
+      gameState: gs,
+      difficulty,
+      isPlayerTurn: deriveIsPlayerTurn(gs),
+      resultRecorded: false,
+    })
   },
 
   /**
@@ -571,11 +581,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       stateHistory: [],
       isPlayerTurn: false,
       isDebugMode: false,
+      resultRecorded: false,
     })
   },
 
   setDebugMode: (v) => set({ isDebugMode: v }),
   setDifficulty: (d) => set({ difficulty: d }),
+
+  markResultRecorded: () => set({ resultRecorded: true }),
 
   /**
    * Updates the rules mode (patriarchal ↔ matriarchal) during PREPARATION.
